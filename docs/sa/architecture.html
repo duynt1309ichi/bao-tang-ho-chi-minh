@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<!--
+  ARCHITECTURE MAP / SƠ ĐỒ KIẾN TRÚC KHỐI — mẫu của SA, Duy SDLC Kit
+  ===========================================================================
+  MỤC ĐÍCH: 1 trang HTML để nhìn KIẾN TRÚC TỔNG THỂ theo TẦNG & KHỐI —
+    • Phân tầng: Client → Cổng → Dịch vụ → Dữ liệu → Tích hợp ngoài → Hạ tầng xuyên suốt
+    • Mỗi KHỐI: công nghệ (badge), phục vụ module/FR nào, mô tả ngắn
+    • Đường LUỒNG (connector) giữa các khối; danh sách LUỒNG CHÍNH end-to-end
+    • Trạng thái khối (nâng cấp): Thêm mới / Thay đổi / Giữ nguyên / Ngoài phạm vi
+  Đi KÈM (không thay) HLD.md — .md là nguồn sự thật đặc tả; HTML này để "dễ nhìn".
+  Sinh ở B2 (cùng HLD). Lưu: docs/sa/architecture.html
+    (kiểu B microservices: docs/system_architecture.html — đi cùng system_architecture.md).
+
+  CÁCH DÙNG (SA): CHỈ sửa biến DATA. layers[].blocks[] = các khối; edges = luồng nối
+    (from→to theo id khối); flows = luồng chính dạng chữ. status: 'new'|'change'|'keep'|'na' (tuỳ chọn).
+  Ví dụ dùng tình huống "gói cước data" — THAY bằng dự án thật rồi xoá phần mẫu.
+-->
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Architecture Map — Sơ đồ kiến trúc khối</title>
+<style>
+  :root{
+    --bg:#f4f6f8;--card:#fff;--ink:#1f2733;--muted:#69727f;--line:#e5e9ef;
+    --accent:#f26a21;--new:#1f9d55;--change:#c98a12;--keep:#5566;--na:#98a2b0;
+    --new-bg:#e9f7ef;--change-bg:#fbf1de;--na-bg:#eef1f5;--edge:#c3cad4;
+    --lb:#eef2f7;--tech:#eef1f6;--tech-ink:#42506a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+  .wrap{max-width:1200px;margin:0 auto;padding:26px 26px 70px}
+  .kick{font:600 12px/1.4 ui-monospace,monospace;letter-spacing:.14em;color:#1a7f8c;text-transform:uppercase;margin-bottom:6px}
+  h1{margin:0 0 8px;font-size:29px;font-weight:800;letter-spacing:-.5px}
+  .lead{color:#40474f;max-width:800px;margin:0 0 6px}
+  .meta{color:var(--muted);font-size:13px}
+  .stats{display:flex;flex-wrap:wrap;gap:14px;margin:18px 0 8px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 18px;min-width:140px;flex:1}
+  .tile .n{font-size:28px;font-weight:800;line-height:1}
+  .tile .l{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted);margin:6px 0 4px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+  .dot.new{background:var(--new)}.dot.change{background:var(--change)}.dot.keep{background:#9aa4b2}.dot.na{background:var(--na)}
+  .tools{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 12px}
+  .tools input{padding:8px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:#fff;min-width:220px;flex:1;max-width:360px}
+  /* diagram */
+  #diagram{position:relative}
+  #edges{position:absolute;top:0;left:0;pointer-events:none;z-index:0}
+  .layer{position:relative;z-index:1;display:grid;grid-template-columns:130px 1fr;gap:14px;align-items:stretch;margin:0 0 30px}
+  .llabel{font-weight:700;font-size:13px;color:#3a4353;background:var(--lb);border:1px solid var(--line);border-radius:10px;padding:12px;display:flex;flex-direction:column;justify-content:center}
+  .llabel small{font-weight:500;color:var(--muted);font-size:11.5px;margin-top:3px}
+  .blocks{display:flex;flex-wrap:wrap;gap:12px;align-content:flex-start}
+  .block{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 13px;min-width:170px;max-width:250px;flex:1;box-shadow:0 1px 2px rgba(20,30,50,.04)}
+  .block.new{border-left:4px solid var(--new)} .block.change{border-left:4px solid var(--change)} .block.keep{border-left:4px solid #9aa4b2} .block.na{border-left:4px dashed var(--na);opacity:.72}
+  .bname{font-weight:700;font-size:14px;display:flex;align-items:center;gap:6px}
+  .bserves{font:11px/1.3 ui-monospace,monospace;color:var(--muted);margin-top:2px}
+  .bdesc{color:#4a515a;font-size:12px;margin-top:5px}
+  .techs{display:flex;flex-wrap:wrap;gap:4px;margin-top:7px}
+  .tech{font-size:10.5px;font-weight:600;background:var(--tech);color:var(--tech-ink);padding:2px 7px;border-radius:5px}
+  .stag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;margin-left:auto}
+  .stag.new{background:var(--new-bg);color:var(--new)} .stag.change{background:var(--change-bg);color:var(--change)} .stag.na{background:var(--na-bg);color:var(--na)}
+  .dim{opacity:.25;transition:opacity .15s}
+  .hot{outline:2px solid var(--accent);outline-offset:2px}
+  /* flows */
+  .flows{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-top:6px}
+  .flows h3{margin:0 0 8px;font-size:15px}
+  .flow{padding:7px 0;border-top:1px dashed var(--line);font-size:13px}
+  .flow:first-of-type{border-top:0}
+  .flow b{color:#2a3340}
+  .flow .st{font:12px/1.5 ui-monospace,monospace;color:#3a4a63}
+  footer{max-width:1200px;margin:0 auto;padding:14px 26px 40px;color:var(--muted);font-size:12px}
+  @media print{.tools{display:none}.layer,.flows,.block{break-inside:avoid}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick" id="kick"></div>
+  <h1 id="title"></h1>
+  <p class="lead" id="lead"></p>
+  <div class="meta" id="meta"></div>
+  <div class="stats" id="stats"></div>
+  <div class="legend" id="legend"></div>
+  <div class="tools"><input type="search" id="q" placeholder="🔎 Tô sáng khối / công nghệ / module…"></div>
+  <div id="diagram"><svg id="edges"></svg><div id="layers"></div></div>
+  <div id="flows"></div>
+</div>
+<footer id="foot"></footer>
+
+<script>
+/* ===================== SA CHỈ SỬA PHẦN DATA NÀY ===================== */
+const DATA = {
+  project:"Bảo tàng Triết học",
+  archStyle:"Web tĩnh · modular monolith phía client",
+  updated:"2026-10-06",
+  showStatus:false,
+  layers:[
+    { id:"L1", name:"Kênh / Client", note:"trình duyệt, WebGL2", blocks:[
+      {id:"pc", name:"Trình duyệt máy tính", techs:["Chrome/Edge","WebGL2"], serves:"Sinh viên · giảng viên", desc:"Bàn phím + chuột, pointer lock."},
+      {id:"mb", name:"Trình duyệt điện thoại", techs:["Chrome Android","Safari iOS 16+"], serves:"Sinh viên", desc:"Joystick + cảm ứng, mặc định chất lượng Thấp."}
+    ]},
+    { id:"L2", name:"Cổng / Edge", note:"không có máy chủ ứng dụng", blocks:[
+      {id:"cdn", name:"Vercel CDN", techs:["HTTPS","vercel.json"], serves:"NFR-09, NFR-12", desc:"Phục vụ file tĩnh có hash; header CSP, nosniff, no-referrer. Preview = UAT, Production = link nộp."}
+    ]},
+    { id:"L3", name:"Dịch vụ (module SPA)", note:"TypeScript 6 + three 0.186", blocks:[
+      {id:"core", name:"core", techs:["three","postprocessing","n8ao"], serves:"FR-01, FR-21, FR-22", desc:"Máy trạng thái, vòng lặp, renderer, mức chất lượng, EventTarget."},
+      {id:"world", name:"world", techs:["three-mesh-bvh"], serves:"FR-07 → FR-09, FR-23", desc:"Tải khu, lightmap, collider BVH, blockout dự phòng, ngày/đêm, pháo hoa."},
+      {id:"player", name:"player", techs:["AnimationMixer"], serves:"FR-02, FR-04 → FR-07", desc:"Nhân vật, bàn phím/chuột/cảm ứng, camera thứ 3/thứ nhất."},
+      {id:"exhibits", name:"exhibits", techs:["three"], serves:"FR-12 → FR-14", desc:"Phát hiện ≤ 2 m/60°, xem cận, 13 hiện vật 🎛."},
+      {id:"quiz", name:"quiz", techs:["TS"], serves:"FR-16, FR-17", desc:"Trạm trắc nghiệm, chấm, gợi ý xem lại."},
+      {id:"ui", name:"ui", techs:["HTML/CSS"], serves:"FR-03, FR-09 → FR-11, FR-18, FR-20, FR-25, FR-27", desc:"HUD, bản đồ, popup, menu, cài đặt."},
+      {id:"audio", name:"audio", techs:["Web Audio"], serves:"FR-24", desc:"Nhạc nền, bước chân, hiệu ứng."},
+      {id:"storage", name:"storage", techs:["TS"], serves:"FR-15, FR-19, FR-20", desc:"Validate + đọc/ghi tiến độ, cài đặt; bộ nhớ tạm khi bị chặn."}
+    ]},
+    { id:"L4", name:"Dữ liệu", note:"không có CSDL máy chủ", blocks:[
+      {id:"ls", name:"localStorage", techs:["bttr.progress.v1","bttr.settings.v1"], desc:"Tiến độ + cài đặt, không PII, không rời thiết bị."},
+      {id:"content", name:"Dữ liệu nội dung (đóng gói)", techs:["layout.json","exhibits.ts","quiz.ts"], desc:"10 phòng, 63 hiện vật, câu trắc nghiệm, credits."},
+      {id:"assets", name:"Asset tĩnh", techs:["GLB meshopt","WebP","woff2"], desc:"Vỏ tòa nhà theo khu, nhân vật, mô hình, âm thanh, font."}
+    ]},
+    { id:"L5", name:"Tích hợp ngoài", note:"chỉ lúc làm asset, không gọi lúc chạy", blocks:[
+      {id:"blender", name:"Blender 4.5 LTS", techs:["bpy headless"], desc:"Dựng vỏ tòa nhà từ layout.json, bake lightmap, xuất GLB + mesh va chạm."},
+      {id:"src", name:"Nguồn asset CC0/PD", techs:["Poly Haven","Quaternius","Wikimedia"], desc:"Tải về, nén, ghi CREDITS.md."}
+    ]},
+    { id:"L6", name:"Xuyên suốt", note:"build & chất lượng", blocks:[
+      {id:"val", name:"Kiểm tra dữ liệu", techs:["Node 24"], serves:"FR-26", desc:"validate-content.ts chạy trước build; lỗi thì không deploy."},
+      {id:"build", name:"Build", techs:["Vite 8","tsc --noEmit"], desc:"Bundle có hash, báo ngân sách dung lượng."},
+      {id:"test", name:"Unit test", techs:["Vitest 5"], desc:"Lưu trữ, trắc nghiệm, phát hiện hiện vật, validate."},
+      {id:"gt", name:"Nén asset", techs:["gltf-transform 4.5"], desc:"meshopt + WebP, gộp mesh."}
+    ]}
+  ],
+  edges:[
+    {from:"pc",to:"cdn"},{from:"mb",to:"cdn"},
+    {from:"cdn",to:"core"},
+    {from:"core",to:"world"},{from:"core",to:"player"},{from:"core",to:"exhibits"},{from:"core",to:"ui"},
+    {from:"ui",to:"quiz"},{from:"exhibits",to:"storage"},{from:"quiz",to:"storage"},{from:"storage",to:"ls"},
+    {from:"world",to:"assets"},{from:"exhibits",to:"content"},{from:"quiz",to:"content"},{from:"world",to:"content"},
+    {from:"blender",to:"gt"},{from:"src",to:"gt"},{from:"gt",to:"assets"},{from:"val",to:"build"},{from:"build",to:"cdn"}
+  ],
+  flows:[
+    {name:"Khởi động (FR-01)", steps:"Trình duyệt → Vercel CDN → core kiểm WebGL2 → storage đọc localStorage → tải gói ban đầu → màn mở đầu → nạp nền Khu A → B → C → ôn tập"},
+    {name:"Xem hiện vật (FR-12 → FR-15)", steps:"player di chuyển → exhibits chọn mục tiêu → E → camera tween + ui bảng chi tiết (content) → storage.markExplored → localStorage → HUD N/63"},
+    {name:"Trắc nghiệm (FR-16)", steps:"E ở trạm → quiz lấy câu (content) → chấm + gợi ý → storage.saveQuiz (giữ lượt tốt nhất) → bản đồ ★"},
+    {name:"Làm asset & deploy", steps:"layout.json → Blender bpy → GLB thô → gltf-transform → public/assets → validate-content → Vite build → Vercel Preview (UAT) → master → Production"}
+  ]
+};
+/* =================== HẾT PHẦN SA CẦN SỬA =================== */
+
+const STAG={new:"Thêm mới",change:"Thay đổi",na:"Ngoài phạm vi"};
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const allBlocks=()=>DATA.layers.flatMap(l=>l.blocks);
+const nExt=(DATA.layers.find(l=>/ngoài/i.test(l.name))||{blocks:[]}).blocks.length;
+const nSvc=(DATA.layers.find(l=>/dịch vụ/i.test(l.name))||{blocks:[]}).blocks.length;
+
+document.getElementById('kick').textContent=[DATA.project,DATA.archStyle,"KIẾN TRÚC TỔNG THỂ","CẬP NHẬT "+DATA.updated].filter(Boolean).join("  ·  ");
+document.getElementById('title').textContent="Sơ đồ kiến trúc khối theo tầng";
+document.getElementById('lead').innerHTML="Kiến trúc phân tầng: <b>Client → Cổng → Dịch vụ → Dữ liệu → Tích hợp ngoài</b>, kèm hạ tầng xuyên suốt. Mỗi khối ghi công nghệ + module phục vụ. Trang này <b>đi kèm</b> (không thay) <code>HLD.md</code> — .md là nguồn sự thật đặc tả.";
+document.getElementById('meta').textContent=`${DATA.layers.length} tầng · ${allBlocks().length} khối · ${nSvc} service · ${nExt} tích hợp ngoài · Kiểu kiến trúc: ${DATA.archStyle}`;
+document.getElementById('foot').textContent="Sinh bởi SA (Duy SDLC Kit) ở B2, đi kèm HLD.md. Sơ đồ để 'dễ nhìn'; mọi quyết định & đặc tả kiến trúc nằm ở HLD.md (nguồn sự thật).";
+
+// stats
+let sc={new:0,change:0,keep:0,na:0}; allBlocks().forEach(b=>sc[b.status||'keep']++);
+const tiles=[{n:DATA.layers.length,l:"Tầng"},{n:allBlocks().length,l:"Khối"},{n:nSvc,l:"Service"},{n:nExt,l:"Tích hợp ngoài"}];
+if(DATA.showStatus){tiles.push({n:sc.new,l:"Thêm mới"}); if(sc.change)tiles.push({n:sc.change,l:"Thay đổi"});}
+document.getElementById('stats').innerHTML=tiles.map(t=>`<div class="tile"><div class="n">${t.n}</div><div class="l">${t.l}</div></div>`).join('');
+
+// legend
+document.getElementById('legend').innerHTML = DATA.showStatus
+ ? `<span><span class="dot new"></span>Thêm mới</span><span><span class="dot change"></span>Thay đổi</span><span><span class="dot keep"></span>Giữ nguyên</span><span><span class="dot na"></span>Ngoài phạm vi</span><span>· badge xám = công nghệ</span>`
+ : `<span>Badge xám = công nghệ của khối · mũi tên = luồng gọi</span>`;
+
+// layers + blocks
+const layers=document.getElementById('layers');
+DATA.layers.forEach(l=>{
+  const row=el('div','layer');
+  row.appendChild(el('div','llabel',`${l.name}${l.note?`<small>${l.note}</small>`:''}`));
+  const bs=el('div','blocks');
+  l.blocks.forEach(b=>{
+    const st=DATA.showStatus?(b.status||'keep'):'';
+    const card=el('div','block'+(st?' '+st:''));
+    card.dataset.block=b.id;
+    card.dataset.text=(b.name+' '+(b.serves||'')+' '+(b.techs||[]).join(' ')+' '+(b.desc||'')).toLowerCase();
+    card.innerHTML=`<div class="bname">${b.name}${DATA.showStatus&&STAG[b.status]?`<span class="stag ${b.status}">${STAG[b.status]}</span>`:''}</div>
+      ${b.serves?`<div class="bserves">${b.serves}</div>`:''}
+      ${b.desc?`<div class="bdesc">${b.desc}</div>`:''}
+      <div class="techs">${(b.techs||[]).map(t=>`<span class="tech">${t}</span>`).join('')}</div>`;
+    bs.appendChild(card);
+  });
+  row.appendChild(bs); layers.appendChild(row);
+});
+
+// flows
+if(DATA.flows&&DATA.flows.length){
+  document.getElementById('flows').innerHTML=`<div class="flows"><h3>🔀 Luồng chính (end-to-end)</h3>
+    ${DATA.flows.map(f=>`<div class="flow"><b>${f.name}:</b> <span class="st">${f.steps}</span></div>`).join('')}</div>`;
+}
+
+// edges (SVG connectors)
+function drawEdges(){
+  const wrap=document.getElementById('diagram'), svg=document.getElementById('edges');
+  const wr=wrap.getBoundingClientRect();
+  svg.setAttribute('width',wrap.offsetWidth); svg.setAttribute('height',wrap.offsetHeight);
+  let s=`<defs><marker id="arw" markerWidth="10" markerHeight="10" refX="7.5" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="${'#9aa4b2'}"/></marker></defs>`;
+  (DATA.edges||[]).forEach(e=>{
+    const a=document.querySelector(`[data-block="${e.from}"]`), b=document.querySelector(`[data-block="${e.to}"]`);
+    if(!a||!b)return;
+    const ra=a.getBoundingClientRect(), rb=b.getBoundingClientRect();
+    const sameRow=Math.abs(ra.top-rb.top)<24;
+    let sx,sy,tx,ty;
+    if(sameRow){ const l2r=ra.left<rb.left; sx=(l2r?ra.right:ra.left)-wr.left; sy=ra.top+ra.height/2-wr.top; tx=(l2r?rb.left:rb.right)-wr.left; ty=rb.top+rb.height/2-wr.top;
+      const mx=(sx+tx)/2; s+=`<path d="M${sx},${sy} C${mx},${sy} ${mx},${ty} ${tx},${ty}" fill="none" stroke="#c3cad4" stroke-width="1.6" marker-end="url(#arw)"/>`; return; }
+    const down=rb.top>ra.top;
+    sx=ra.left+ra.width/2-wr.left; sy=(down?ra.bottom:ra.top)-wr.top;
+    tx=rb.left+rb.width/2-wr.left; ty=(down?rb.top:rb.bottom)-wr.top;
+    const my=(sy+ty)/2;
+    s+=`<path d="M${sx},${sy} C${sx},${my} ${tx},${my} ${tx},${ty}" fill="none" stroke="#c3cad4" stroke-width="1.6" marker-end="url(#arw)"/>`;
+  });
+  svg.innerHTML=s;
+}
+let rt; window.addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(drawEdges,120);});
+window.addEventListener('load',drawEdges); drawEdges();
+
+// search highlight
+document.getElementById('q').addEventListener('input',e=>{
+  const q=e.target.value.trim().toLowerCase();
+  document.querySelectorAll('.block').forEach(b=>{
+    const hit=q&&b.dataset.text.includes(q);
+    b.classList.toggle('hot',!!hit);
+    b.classList.toggle('dim', !!q && !b.dataset.text.includes(q));
+  });
+});
+</script>
+</body>
+</html>

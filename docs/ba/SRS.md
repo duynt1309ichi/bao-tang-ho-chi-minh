@@ -496,9 +496,9 @@ Không có API backend, không có tích hợp bên thứ ba lúc chạy.
 
 Mọi FR-01…FR-27 và NFR-01…NFR-14 đều có trong bảng trên.
 
-## 8. Điểm cần anh Duy xác nhận ở GATE-2
+## 8. Quyết định đã xác nhận (anh Duy, 2026-10-06)
 
-1. **Trắc nghiệm trước/sau để đo BG-03** làm ngoài app (Google Form) — giả định A-02. Nếu muốn làm trong app thì thêm một FR.
-2. **Hiện vật 🎛 tính "đã khám phá" ngay khi mở** (BR-S01), không bắt buộc làm xong thao tác — để không ai bị kẹt ở 62/63.
-3. **Trắc nghiệm mở ngay từ đầu** (BR-S11), không cần khám phá phòng trước.
-4. **Chọn nhân vật nam/nữ (FR-02)** để ưu tiên Thấp: nếu thiếu thời gian thì chỉ làm một nhân vật.
+1. Trắc nghiệm trước/sau để đo BG-03 làm ngoài app (giả định A-02).
+2. Hiện vật 🎛 tính "đã khám phá" ngay khi mở (BR-S01).
+3. Trắc nghiệm mở ngay từ đầu (BR-S11).
+4. Chọn nhân vật nam/nữ (FR-02) giữ ưu tiên Thấp; thiếu thời gian thì chỉ làm một nhân vật.

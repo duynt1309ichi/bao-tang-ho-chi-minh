@@ -8,7 +8,7 @@
 - **Loại dự án:** Mới (Track A)
 - **Kiểu bố trí tài liệu:** A — monolith, tài liệu đi chung repo code (`docs/{ba,sa,design,qa,security}`)
 - **Giai đoạn hiện tại:** B2 — SRS + Techstack + HLD
-- **Cổng đang chờ:** GATE-2
+- **Cổng đang chờ:** GATE-2 (đủ hồ sơ: SRS, function-map, techstack, HLD, architecture)
 - **GATE-3 (đóng băng thiết kế):** BẬT
 - **GATE-4 (nghiệm thu chức năng):** BẬT
 
@@ -21,9 +21,9 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 | BRD.md            | BA          | APPROVED     | 2026-10-06             |
 | SRS.md            | BA          | DONE         | 2026-10-06             |
 | function-map.html | BA          | DONE         | 2026-10-06             |
-| techstack.md      | SA          | NOT_STARTED  |                        |
-| HLD.md            | SA          | NOT_STARTED  |                        |
-| architecture.html | SA          | NOT_STARTED  |                        |
+| techstack.md      | SA          | DONE         | 2026-10-06             |
+| HLD.md            | SA          | DONE         | 2026-10-06             |
+| architecture.html | SA          | DONE         | 2026-10-06             |
 | FSD.md            | BA          | NOT_STARTED  |                        |
 | LLD.md            | SA          | NOT_STARTED  |                        |
 | api-spec.md       | SA          | —            | không áp dụng — không có backend (anh Duy chọn quy trình rút gọn 2026-10-06) |
@@ -68,3 +68,4 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 - 2026-10-06 — anh Duy trả lời câu hỏi mở: nộp đồ án bằng link web host (Vercel) cho giảng viên xem; tên sản phẩm "Bảo tàng Triết học". BRD → v0.2. PO trình lại GATE-1.
 - 2026-10-06 — anh Duy duyệt GATE-1 (BRD v1.0). Sang B2: BA viết SRS + function-map; SA brainstorm kiến trúc.
 - 2026-10-06 — BA viết `docs/ba/SRS.md` v0.1 (27 FR, 14 NFR, 4 điểm chờ xác nhận ở mục 8) + `docs/ba/function-map.html` → DONE. SA bắt đầu brainstorm kiến trúc.
+- 2026-10-06 — anh Duy xác nhận 4 điểm SRS mục 8, chọn phương án kiến trúc A (Three.js thuần) và toàn bộ bảng version. SA viết `docs/sa/techstack.md`, `HLD.md`, `architecture.html` → DONE. PO trình GATE-2.
