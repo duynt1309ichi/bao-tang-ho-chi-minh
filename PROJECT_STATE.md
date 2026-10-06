@@ -7,8 +7,8 @@
 - **Ngày khởi tạo:** 2026-10-06
 - **Loại dự án:** Mới (Track A)
 - **Kiểu bố trí tài liệu:** A — monolith, tài liệu đi chung repo code (`docs/{ba,sa,design,qa,security}`)
-- **Giai đoạn hiện tại:** B4 — Kiểm thử (vòng 2 sạch lỗi trên nhánh `fix/qa-round1`; còn 9 TC chờ máy thật)
-- **Cổng đang chờ:** GATE-4 (nghiệm thu bản sau sửa lỗi; M1–M5 đã nghiệm thu chức năng từng mốc)
+- **Giai đoạn hiện tại:** B4 xong (GATE-4 đã duyệt). Sắp sang B5 — An toàn thông tin. Còn 9 TC chờ máy thật (checklist test-plan mục 4 hoặc dời UAT B6)
+- **Cổng đang chờ:** GATE-5 (ký duyệt bảo mật)
 - **GATE-3 (đóng băng thiết kế):** BẬT
 - **GATE-4 (nghiệm thu chức năng):** BẬT
 
@@ -31,7 +31,7 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 | scaffold-backend  | Backend     | —            | không áp dụng (quy trình rút gọn) |
 | scaffold-frontend | Frontend    | APPROVED     | 2026-10-06             |
 | scaffold-mobile   | Mobile      | —            | không áp dụng — web responsive thay app native |
-| src (code)        | Frontend    | IN_PROGRESS  | 2026-10-06             |
+| src (code)        | Frontend    | APPROVED     | 2026-10-06 — GATE-4 |
 | test-plan.md      | Tester      | DONE         | 2026-10-06             |
 | test-cases.md     | Tester      | DONE         | 2026-10-06             |
 | test-report.md    | Tester      | DONE         | 2026-10-06 — vòng 2: 115 Pass, 0 Fail, 9 Blocked (máy thật) |
@@ -52,6 +52,7 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 | GATE-4 | Duyệt (phạm vi M1–M2) | anh Duy | 2026-10-06 | Nghiệm thu chức năng M1–M2, gồm 38 câu trắc nghiệm. M3–M5 nghiệm thu tiếp ở GATE-4 sau |
 | GATE-4 | Duyệt (phạm vi M3–M4) | anh Duy | 2026-10-06 | Nghiệm thu M3–M4 (gồm nội dung rà ở M4). M5 nghiệm thu sau |
 | GATE-4 | Duyệt (phạm vi M5) | anh Duy | 2026-10-06 | Nghiệm thu M5. Chuyển sang kiểm thử |
+| GATE-4 | Duyệt (bản sau sửa lỗi QA) | anh Duy | 2026-10-06 | test-report vòng 2: 115 Pass, 0 Fail, 9 Blocked (máy thật). Merge `fix/qa-round1` vào `main` |
 | GATE-5 | —        |             |      |         |
 | GATE-6 | —        |             |      |         |
 
@@ -91,3 +92,4 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 - 2026-10-06 — anh Duy nghiệm thu GATE-4 phạm vi M5. Merge `feature/m5-mobile` vào `main` (fast-forward `9f0b780`). Chuyển sang kiểm thử (tester, B4).
 - 2026-10-06 — Tester viết `docs/qa/test-plan.md`, `docs/qa/test-cases.md` (124 TC, 27/27 FR) và chạy vòng 1 trên Chrome (khung Browser) + build: 107 Pass, 7 Fail, 10 Blocked; 69 unit test xanh, `npm audit --omit=dev` 0 lỗ hổng, gói tải ban đầu 4,6 MB. `docs/qa/test-report.md` ghi 5 lỗi: **BUG-01 Major** chưa có popup vào phòng (FR-09/SCR-06), **BUG-02 Major** chưa có khung xoay mô hình 🧊 (FR-13 2a, 23 hiện vật), BUG-03 Minor phím M không thu nhỏ bản đồ, BUG-04 Minor ẩn tab không mở menu khi chưa khóa con trỏ (FR-21 b), BUG-05 Minor ghi cài đặt lỗi không báo MSG-11. Blocked chủ yếu do cần máy thật (NFR-01/02/04/05) — checklist ở test-plan mục 4.
 - 2026-10-06 — anh Duy cho sửa 5 lỗi. Nhánh `fix/qa-round1` (cắt từ `main`): BUG-01 `ui/roomPopup.ts` (SCR-06 + phòng ôn tập, MSG-05 khi vào lại, "Quay lại" lùi 1 m); BUG-02 mô hình 🧊 thành mesh riêng (`world/geometry.ts` `ModelPart`, `world/blockout.ts` `models`) + `exhibits/viewer.ts` (kéo trên khung 3D để xoay, dọc ±30°, "Đặt lại góc", đóng bảng thì trả góc cũ; `scripts/bake-scene.ts` vẫn xuất mô hình làm vật đổ bóng); BUG-03 phím M đóng bản đồ không bị mở lại (`preventDefault` + kiểm `defaultPrevented`); BUG-04 `visibilitychange` mở menu tạm dừng; BUG-05 `kv.onFail` báo MSG-11 cho mọi lỗi đọc/ghi. LLD cập nhật dòng `exhibits/viewer.ts`. 72 unit test xanh, build OK. Tester chạy vòng 2: 115 Pass, 0 Fail, 9 Blocked (máy thật, toàn màn hình, ảnh lỗi) → test-report DONE. Mô hình 🧊 vẫn là khối đa diện tượng trưng theo màu khu (chưa có mô hình riêng từng hiện vật).
+- 2026-10-06 — anh Duy duyệt GATE-4 cho bản sau sửa lỗi QA. Merge `fix/qa-round1` vào `main` (fast-forward `b78b160`), đẩy lên origin. Bước tiếp: B5 — security-engineer (`docs/security/pentest-report.md`). 9 TC Blocked chờ anh Duy chạy trên máy thật hoặc dời sang UAT B6.
