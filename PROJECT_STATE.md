@@ -7,8 +7,8 @@
 - **Ngày khởi tạo:** 2026-10-06
 - **Loại dự án:** Mới (Track A)
 - **Kiểu bố trí tài liệu:** A — monolith, tài liệu đi chung repo code (`docs/{ba,sa,design,qa,security}`)
-- **Giai đoạn hiện tại:** B2 — SRS + Techstack + HLD
-- **Cổng đang chờ:** GATE-2 (đủ hồ sơ: SRS, function-map, techstack, HLD, architecture)
+- **Giai đoạn hiện tại:** B3 — FSD + LLD + design + scaffold
+- **Cổng đang chờ:** GATE-3
 - **GATE-3 (đóng băng thiết kế):** BẬT
 - **GATE-4 (nghiệm thu chức năng):** BẬT
 
@@ -19,11 +19,11 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 |-------------------|-------------|--------------|------------------------|
 | audit-report.md   | BA + SA     | —            | không áp dụng (dự án mới) |
 | BRD.md            | BA          | APPROVED     | 2026-10-06             |
-| SRS.md            | BA          | DONE         | 2026-10-06             |
-| function-map.html | BA          | DONE         | 2026-10-06             |
-| techstack.md      | SA          | DONE         | 2026-10-06             |
-| HLD.md            | SA          | DONE         | 2026-10-06             |
-| architecture.html | SA          | DONE         | 2026-10-06             |
+| SRS.md            | BA          | APPROVED     | 2026-10-06             |
+| function-map.html | BA          | APPROVED     | 2026-10-06             |
+| techstack.md      | SA          | APPROVED     | 2026-10-06             |
+| HLD.md            | SA          | APPROVED     | 2026-10-06             |
+| architecture.html | SA          | APPROVED     | 2026-10-06             |
 | FSD.md            | BA          | NOT_STARTED  |                        |
 | LLD.md            | SA          | NOT_STARTED  |                        |
 | api-spec.md       | SA          | —            | không áp dụng — không có backend (anh Duy chọn quy trình rút gọn 2026-10-06) |
@@ -47,7 +47,7 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 | Cổng   | Kết quả  | Người duyệt | Ngày | Ghi chú |
 |--------|----------|-------------|------|---------|
 | GATE-1 | Duyệt    | anh Duy     | 2026-10-06 | BRD v1.0 |
-| GATE-2 | —        |             |      |         |
+| GATE-2 | Duyệt    | anh Duy     | 2026-10-06 | SRS v0.1, techstack, HLD, architecture, function-map |
 | GATE-3 | —        |             |      |         |
 | GATE-4 | —        |             |      |         |
 | GATE-5 | —        |             |      |         |
@@ -69,3 +69,4 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 - 2026-10-06 — anh Duy duyệt GATE-1 (BRD v1.0). Sang B2: BA viết SRS + function-map; SA brainstorm kiến trúc.
 - 2026-10-06 — BA viết `docs/ba/SRS.md` v0.1 (27 FR, 14 NFR, 4 điểm chờ xác nhận ở mục 8) + `docs/ba/function-map.html` → DONE. SA bắt đầu brainstorm kiến trúc.
 - 2026-10-06 — anh Duy xác nhận 4 điểm SRS mục 8, chọn phương án kiến trúc A (Three.js thuần) và toàn bộ bảng version. SA viết `docs/sa/techstack.md`, `HLD.md`, `architecture.html` → DONE. PO trình GATE-2.
+- 2026-10-06 — anh Duy duyệt GATE-2. Sang B3: FSD, LLD, design, scaffold-frontend.

@@ -1,6 +1,6 @@
 # HLD — Bảo tàng Triết học
 
-| Phiên bản | v0.1 | Ngày | 2026-10-06 | Trạng thái | DRAFT — chờ GATE-2 |
+| Phiên bản | v1.0 | Ngày | 2026-10-06 | Trạng thái | APPROVED — GATE-2 (anh Duy, 2026-10-06) |
 |-----------|------|------|------------|------------|--------------------|
 
 Căn cứ: [BRD v1.0](../ba/BRD.md), [SRS v0.1](../ba/SRS.md), [techstack](techstack.md). Sơ đồ khối đi kèm: [architecture.html](architecture.html).

@@ -1,6 +1,6 @@
 # SRS — Bảo tàng Triết học
 
-| Phiên bản | v0.1 | Ngày | 2026-10-06 | Trạng thái | DRAFT — chờ GATE-2 |
+| Phiên bản | v1.0 | Ngày | 2026-10-06 | Trạng thái | APPROVED — GATE-2 (anh Duy, 2026-10-06) |
 |-----------|------|------|------------|------------|--------------------|
 
 ## 1. Giới thiệu
