@@ -1,6 +1,6 @@
 # LLD — Bảo tàng Triết học
 
-| Phiên bản | v0.1 | Ngày | 2026-10-06 | Trạng thái | DRAFT — chờ GATE-3 |
+| Phiên bản | v0.1 | Ngày | 2026-10-06 | Trạng thái | APPROVED — GATE-3 (anh Duy, 2026-10-06) |
 |-----------|------|------|------------|------------|--------------------|
 
 Căn cứ: [SRS v1.0](../ba/SRS.md), [HLD v1.0](HLD.md), [FSD](../ba/FSD.md), [design.md](../design/design.md). Không có CSDL máy chủ: "data model" ở đây là **kiểu TypeScript** của dữ liệu đóng gói và của dữ liệu lưu trong `localStorage`. Tên kiểu/trường dưới đây là nguồn sự thật cho code.

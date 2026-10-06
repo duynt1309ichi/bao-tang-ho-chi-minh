@@ -1,6 +1,6 @@
 # design.md — Bảo tàng Triết học
 
-| Phiên bản | v0.1 | Ngày | 2026-10-06 | Trạng thái | DRAFT — chờ GATE-3 |
+| Phiên bản | v0.1 | Ngày | 2026-10-06 | Trạng thái | APPROVED — GATE-3 (anh Duy, 2026-10-06) |
 |-----------|------|------|------------|------------|--------------------|
 
 Căn cứ: [SRS v1.0](../ba/SRS.md), [HLD v1.0](../sa/HLD.md). Đặc tả hành vi từng màn ở [FSD](../ba/FSD.md).

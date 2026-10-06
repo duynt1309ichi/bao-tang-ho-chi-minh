@@ -1,6 +1,6 @@
 # FSD — Đặc tả chức năng theo màn hình — Bảo tàng Triết học
 
-| Phiên bản | v0.1 | Ngày | 2026-10-06 | Trạng thái | DRAFT — chờ GATE-3 |
+| Phiên bản | v0.1 | Ngày | 2026-10-06 | Trạng thái | APPROVED — GATE-3 (anh Duy, 2026-10-06) |
 |-----------|------|------|------------|------------|--------------------|
 
 ## 1. Giới thiệu
