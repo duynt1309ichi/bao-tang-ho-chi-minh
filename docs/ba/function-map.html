@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<!--
+  FUNCTION MAP / BẢN ĐỒ CÂY TÍNH NĂNG — mẫu của BA, Duy SDLC Kit
+  ===========================================================================
+  MỤC ĐÍCH: 1 trang HTML để QUẢN LÝ nắm nhanh độ phủ tính năng —
+    • Cây tính năng gom theo MODULE / nhóm nghiệp vụ (thẻ lưới)
+    • Mỗi tính năng gắn NỀN TẢNG: 📱 App / 🖥 CMS / Cả hai
+    • TRẠNG THÁI đặc tả: Đã đặc tả / Một phần·chưa rõ / Chưa đặc tả / Ngoài phạm vi
+    • Badge VERSION (vd v0.5) đánh dấu tính năng mới đặc tả ở phiên bản nào
+    • Panel "Đã bổ sung ở <version>" tóm tắt thay đổi gần nhất
+    • Mã SCR màn hình tham chiếu FSD; mã FR tham chiếu SRS
+  Sinh ở B2 (cùng SRS), cập nhật xuyên suốt. Lưu: docs/ba/function-map.html
+    (kiểu B microservices: docs/function-map.html — mức tổng thể, gộp theo nghiệp vụ).
+
+  CÁCH DÙNG (BA): CHỈ sửa biến DATA bên dưới, trang tự render.
+    - platform: 'app' | 'cms' | 'both'
+    - status:   'done' (đặc tả đủ) | 'partial' (một phần/chưa rõ) | 'none' (chưa) | 'na' (ngoài phạm vi)
+    - version:  (tuỳ chọn) '0.5'… → hiện badge; đặt DATA.milestone để đếm "mới ở vX" trên thẻ thống kê
+    - fr / scr: mã truy vết về SRS (FR-xx) và FSD (SCR-xx)
+  Dữ liệu ví dụ dùng tình huống "gói cước data" — THAY bằng dự án thật rồi xoá phần mẫu.
+-->
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Function Map — Bản đồ cây tính năng</title>
+<style>
+  :root{
+    --bg:#f4f6f8; --card:#fff; --ink:#1f2733; --muted:#69727f; --line:#e5e9ef;
+    --accent:#f26a21; --done:#1f9d55; --partial:#c98a12; --none:#c0392b; --na:#98a2b0;
+    --done-bg:#e9f7ef; --partial-bg:#fbf1de; --none-bg:#fbeceb; --na-bg:#eef1f5;
+    --ver:#127a3e; --ver-bg:#e4f4ea; --app:#31538f; --app-bg:#e9f0fb; --cms:#8a6d1f; --cms-bg:#f6efdc; --both:#1f7a52; --both-bg:#e5f4ec;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+  .wrap{max-width:1160px;margin:0 auto;padding:26px 26px 70px}
+  .kick{font:600 12px/1.4 ui-monospace,monospace;letter-spacing:.14em;color:var(--done);text-transform:uppercase;margin-bottom:6px}
+  h1{margin:0 0 8px;font-size:30px;font-weight:800;letter-spacing:-.5px}
+  .lead{color:#40474f;max-width:760px;margin:0 0 6px}
+  .lead .v{color:var(--ver);font-weight:600}
+  .meta{color:var(--muted);font-size:13px}
+  /* stats */
+  .stats{display:flex;flex-wrap:wrap;gap:14px;margin:20px 0 6px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 18px;min-width:150px;flex:1}
+  .tile .n{font-size:30px;font-weight:800;line-height:1}
+  .tile .l{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .tile.done .n{color:var(--done)} .tile.mile .n{color:#1a7f8c} .tile.partial .n{color:var(--partial)} .tile.none .n{color:var(--none)}
+  /* tabs + legend */
+  .tabs{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:12px;padding:5px;gap:4px;margin:18px 0 12px}
+  .tab{padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:13.5px;color:var(--muted);border:0;background:none}
+  .tab.on{background:var(--done);color:#fff}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:12.5px;color:var(--muted);margin-bottom:8px}
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:middle}
+  .dot.done{background:var(--done)} .dot.partial{background:var(--partial)} .dot.none{background:var(--none)} .dot.na{background:var(--na)}
+  .vbadge{font:600 11px/1 ui-monospace,monospace;color:var(--ver);background:var(--ver-bg);padding:3px 6px;border-radius:5px}
+  .tools{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 14px}
+  .tools input,.tools select{padding:8px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;background:#fff}
+  .tools input[type=search]{flex:1;min-width:200px}
+  /* changelog */
+  .changelog{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--done);border-radius:12px;padding:16px 18px;margin:6px 0 20px}
+  .changelog h3{margin:0 0 4px;font-size:16px}
+  .changelog .cl-sub{color:var(--muted);font-size:12.5px;margin-bottom:10px}
+  .cl-item{display:flex;gap:10px;padding:7px 0;border-top:1px dashed var(--line)}
+  .cl-item:first-of-type{border-top:0}
+  .cl-code{font:600 11px/1.7 ui-monospace,monospace;color:var(--ver);background:var(--ver-bg);padding:2px 8px;border-radius:6px;white-space:nowrap;height:fit-content}
+  .cl-item b{font-weight:700}
+  .cl-item .d{color:#4a515a}
+  /* module grid */
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media(max-width:820px){.grid{grid-template-columns:1fr}}
+  .mod{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--done);border-radius:12px;padding:14px 16px}
+  .mcode{font:600 12px/1 ui-monospace,monospace;color:var(--muted)}
+  .mname{font-size:17px;font-weight:800;margin:3px 0 4px}
+  .mscr{font:12px/1.5 ui-monospace,monospace;color:var(--muted);margin-bottom:8px}
+  .feat{display:flex;align-items:flex-start;gap:9px;padding:9px 4px;border-top:1px solid #f1f3f6}
+  .feat:first-of-type{border-top:0}
+  .fname{flex:1;min-width:0}
+  .fname .t{font-weight:600}
+  .fname .fr{font:11px/1 ui-monospace,monospace;color:var(--muted)}
+  .fname .note{color:var(--muted);font-size:12px;margin-top:2px}
+  .badges{display:flex;flex-direction:column;gap:4px;align-items:flex-end;white-space:nowrap}
+  .plat{font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px}
+  .plat.app{background:var(--app-bg);color:var(--app)} .plat.cms{background:var(--cms-bg);color:var(--cms)} .plat.both{background:var(--both-bg);color:var(--both)}
+  .hidden{display:none!important}
+  footer{max-width:1160px;margin:0 auto;padding:0 26px 40px;color:var(--muted);font-size:12px}
+  @media print{.tools,.tabs{display:none}.mod,.changelog{break-inside:avoid}body{background:#fff}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="kick" id="kick"></div>
+  <h1 id="title"></h1>
+  <p class="lead" id="lead"></p>
+  <div class="meta" id="meta"></div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="tabs" id="tabs"></div>
+  <div class="legend">
+    <span><span class="dot done"></span>Đã đặc tả</span>
+    <span><span class="dot partial"></span>Một phần / chưa rõ</span>
+    <span><span class="dot none"></span>Chưa đặc tả</span>
+    <span><span class="dot na"></span>Ngoài phạm vi</span>
+    <span><span class="vbadge">v0.5</span> = mới đặc tả ở phiên bản đó</span>
+  </div>
+  <div class="tools">
+    <input type="search" id="q" placeholder="🔎 Tìm tính năng / mã FR / SCR…">
+    <select id="fStatus">
+      <option value="">Mọi trạng thái</option>
+      <option value="done">Đã đặc tả</option>
+      <option value="partial">Một phần / chưa rõ</option>
+      <option value="none">Chưa đặc tả</option>
+      <option value="na">Ngoài phạm vi</option>
+    </select>
+  </div>
+
+  <div id="changelog"></div>
+  <div class="grid" id="grid"></div>
+</div>
+<footer id="foot"></footer>
+
+<script>
+/* ===================== BA CHỈ SỬA PHẦN DATA NÀY ===================== */
+const DATA = {
+  project:"Bảo tàng Triết học",
+  category:"Bảo tàng 3D trên web · đồ án môn học",
+  coverageLabel:"SRS v0.1",
+  updated:"2026-10-06",
+  milestone:"0.1",
+  platforms:[                      // app = máy tính (bàn phím + chuột), cms = điện thoại/cảm ứng
+    {id:"app", name:"Máy tính", icon:"🖥"},
+    {id:"cms", name:"Điện thoại", icon:"📱"}
+  ],
+  changelog:{
+    title:"Đặc tả lần đầu trong SRS v0.1 (sau GATE-1)",
+    sub:"27 FR + 14 NFR, truy vết về BG-01…BG-05. Còn 4 điểm chờ anh Duy xác nhận ở GATE-2 (SRS mục 8).",
+    items:[
+      {code:"BR-S01", ver:"0.1", title:"Khám phá tính khi mở bảng lần đầu.", desc:"Áp dụng cả hiện vật 🎛, để không ai bị kẹt ở 62/63."},
+      {code:"BR-S11", ver:"0.1", title:"Trắc nghiệm mở ngay từ đầu.", desc:"Không cần khám phá phòng trước; đúng hết một lượt thì phòng được ★."},
+      {code:"A-02", ver:"0.1", title:"Trắc nghiệm trước/sau đo BG-03 làm ngoài app.", desc:"Trắc nghiệm trong app chỉ để ôn tập."}
+    ]
+  },
+  modules:[
+    { code:"M1", fr:"FR-01→03", name:"Khởi động & hướng dẫn",
+      features:[
+        {name:"Kiểm tra WebGL2, màn tải, màn mở đầu, xử lý lỗi tải", fr:"FR-01", platform:"both", status:"done", version:"0.1"},
+        {name:"Chọn nhân vật nam/nữ", fr:"FR-02", platform:"both", status:"partial", version:"0.1", note:"Ưu tiên Thấp — chờ anh Duy chốt giữ hay chỉ làm 1 nhân vật."},
+        {name:"Hướng dẫn điều khiển theo loại thiết bị", fr:"FR-03", platform:"both", status:"done", version:"0.1"}
+      ]
+    },
+    { code:"M2", fr:"FR-04→07", name:"Di chuyển & camera",
+      features:[
+        {name:"Đi/chạy bằng WASD, Shift", fr:"FR-04", platform:"app", status:"done", version:"0.1"},
+        {name:"Camera thứ 3: xoay chuột, zoom 1,5–5 m, chống xuyên tường; phím V góc nhìn thứ nhất", fr:"FR-05", platform:"app", status:"done", version:"0.1"},
+        {name:"Joystick, kéo xoay camera, chụm zoom, nút Xem", fr:"FR-06", platform:"cms", status:"done", version:"0.1"},
+        {name:"Va chạm thân nhân vật, tự về sảnh khi rơi, lệnh Về sảnh", fr:"FR-07", platform:"both", status:"done", version:"0.1"}
+      ]
+    },
+    { code:"M3", fr:"FR-08→11", name:"Không gian & định hướng",
+      features:[
+        {name:"Khuôn viên → sảnh → hành lang → 10 phòng → phòng ôn tập; màu theo chương", fr:"FR-08", platform:"both", status:"done", version:"0.1", note:"Mã màu cụ thể do designer chốt ở design.md (B3)."},
+        {name:"Popup vào phòng lần đầu, thông báo khu vực", fr:"FR-09", platform:"both", status:"done", version:"0.1"},
+        {name:"Bản đồ nhỏ: màu khu, ✓ đã khám phá, ★ đã nắm vững", fr:"FR-10", platform:"both", status:"done", version:"0.1"},
+        {name:"HUD: khu vực, tiến độ N/63, nút nhanh", fr:"FR-11", platform:"both", status:"done", version:"0.1"}
+      ]
+    },
+    { code:"M4", fr:"FR-12→15, FR-18", name:"Hiện vật & tiến độ",
+      features:[
+        {name:"Phát hiện hiện vật trong 2 m, góc nhìn ≤ 60°", fr:"FR-12", platform:"both", status:"done", version:"0.1"},
+        {name:"Bảng chi tiết: nội dung, trích dẫn, trang nguồn; xoay mô hình 🧊", fr:"FR-13", platform:"both", status:"done", version:"0.1"},
+        {name:"13 hiện vật tương tác 🎛 theo khuôn chung", fr:"FR-14", platform:"both", status:"partial", version:"0.1", note:"Đã chốt thao tác + điều kiện hoàn thành; hình ảnh và bố trí điều khiển đặc tả ở FSD/design (B3)."},
+        {name:"Ghi nhận khám phá, đếm N/63 và theo phòng", fr:"FR-15", platform:"both", status:"done", version:"0.1"},
+        {name:"Màn hoàn thành 63/63", fr:"FR-18", platform:"both", status:"done", version:"0.1"}
+      ]
+    },
+    { code:"M5", fr:"FR-16→17", name:"Ôn tập",
+      features:[
+        {name:"Trắc nghiệm 10 trạm, 3–5 câu/phòng, lưu lượt tốt nhất", fr:"FR-16", platform:"both", status:"done", version:"0.1", note:"Bộ câu hỏi biên soạn ở mốc M2, anh Duy rà trước GATE-4."},
+        {name:"Gợi ý hiện vật cần xem lại khi trả lời sai", fr:"FR-17", platform:"both", status:"done", version:"0.1"},
+        {name:"Trắc nghiệm trước/sau để đo BG-03", fr:"—", platform:"both", status:"na", note:"Làm ngoài app (giả định A-02), chờ xác nhận."}
+      ]
+    },
+    { code:"M6", fr:"FR-19→20", name:"Lưu trữ cục bộ",
+      features:[
+        {name:"Lưu/khôi phục localStorage, xử lý dữ liệu hỏng và trình duyệt chặn lưu", fr:"FR-19", platform:"both", status:"done", version:"0.1"},
+        {name:"Xóa tiến độ có xác nhận", fr:"FR-20", platform:"both", status:"done", version:"0.1"},
+        {name:"Tài khoản, đăng nhập, đồng bộ nhiều máy", fr:"—", platform:"both", status:"na", note:"Ngoài phạm vi BRD."}
+      ]
+    },
+    { code:"M7", fr:"FR-21→25", name:"Cài đặt & môi trường",
+      features:[
+        {name:"Menu tạm dừng (ESC / ☰), tự dừng khi ẩn tab", fr:"FR-21", platform:"both", status:"done", version:"0.1"},
+        {name:"Chất lượng 3 mức + tự hạ khi FPS < 25; độ nhạy, đảo trục, âm lượng", fr:"FR-22", platform:"both", status:"done", version:"0.1", note:"Nội dung từng mức do SA quy định ở HLD."},
+        {name:"Ngày/đêm (phím N), pháo hoa ban đêm", fr:"FR-23", platform:"both", status:"done", version:"0.1"},
+        {name:"Nhạc nền, bước chân, hiệu ứng hiện vật; nút tắt âm", fr:"FR-24", platform:"both", status:"done", version:"0.1"},
+        {name:"Toàn màn hình", fr:"FR-25", platform:"both", status:"done", version:"0.1"}
+      ]
+    },
+    { code:"M8", fr:"FR-26→27", name:"Nội dung & nguồn",
+      features:[
+        {name:"Build thất bại khi dữ liệu hiện vật/trắc nghiệm sai cấu trúc", fr:"FR-26", platform:"both", status:"done", version:"0.1"},
+        {name:"Bảng Về giáo trình, trang Nguồn & giấy phép", fr:"FR-27", platform:"both", status:"done", version:"0.1"},
+        {name:"Bảng xếp hạng, nhiều người chơi, quản lý lớp", fr:"—", platform:"both", status:"na", note:"Ngoài phạm vi BRD."}
+      ]
+    }
+  ]
+};
+/* =================== HẾT PHẦN BA CẦN SỬA =================== */
+
+const ST={done:"Đã đặc tả",partial:"Một phần / chưa rõ",none:"Chưa đặc tả",na:"Ngoài phạm vi"};
+const PLAT={app:{c:"app",t:"Máy tính"},cms:{c:"cms",t:"Điện thoại"},both:{c:"both",t:"Cả hai"}};
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const allFeats=()=>DATA.modules.flatMap(m=>m.features);
+
+// counts
+let c={done:0,partial:0,none:0,na:0,mile:0};
+allFeats().forEach(f=>{c[f.status]=(c[f.status]||0)+1; if(DATA.milestone&&f.version===DATA.milestone)c.mile++;});
+const appN=allFeats().filter(f=>f.platform!=='cms').length, cmsN=allFeats().filter(f=>f.platform!=='app').length;
+
+document.getElementById('kick').textContent=[DATA.project,DATA.category,"ĐỘ PHỦ TÍNH NĂNG",DATA.coverageLabel].filter(Boolean).join("  ·  ");
+document.getElementById('title').textContent="Bản đồ cây tính năng theo module & nền tảng";
+document.getElementById('lead').innerHTML=`Toàn bộ tính năng gom theo <b>module</b>; mỗi tính năng gắn <b>nền tảng</b> (🖥 Máy tính / 📱 Điện thoại / cả hai) và <b>trạng thái độ phủ đặc tả</b>.`+(DATA.milestone?` Nhãn <span class="v">v${DATA.milestone}</span> = mới đặc tả ở phiên bản đó.`:``);
+document.getElementById('meta').textContent=`${DATA.modules.length} module · ${appN} tính năng trên máy tính · ${cmsN} trên điện thoại · Cập nhật ${DATA.updated}`;
+document.getElementById('foot').textContent="Sinh bởi BA (Duy SDLC Kit) ở B2, cập nhật xuyên suốt. Trạng thái phản ánh mức độ đặc tả trong SRS/FSD — 'Chưa đặc tả' là lỗ hổng cần bổ sung trước khi thiết kế/thi công.";
+
+// stats
+const tiles=[
+  {cls:"",n:DATA.modules.length,l:"Module hiển thị"},
+  {cls:"done",n:c.done,l:"Đã đặc tả"}
+];
+if(DATA.milestone) tiles.push({cls:"mile",n:c.mile,l:`Mới ở v${DATA.milestone}`});
+tiles.push({cls:"partial",n:c.partial,l:"Một phần / chưa rõ"});
+tiles.push({cls:"none",n:c.none,l:"Chưa đặc tả"});
+document.getElementById('stats').innerHTML=tiles.map(t=>`<div class="tile ${t.cls}"><div class="n">${t.n}</div><div class="l">${t.l}</div></div>`).join('');
+
+// tabs
+const tabs=[{id:"",name:"Tất cả",icon:""}].concat(DATA.platforms.map(p=>({id:p.id,name:p.name,icon:p.icon})));
+document.getElementById('tabs').innerHTML=tabs.map((t,i)=>`<button class="tab${i===0?' on':''}" data-plat="${t.id}">${t.icon?t.icon+' ':''}${t.name}</button>`).join('');
+
+// module cards
+function featRow(f){
+  const p=PLAT[f.platform]||PLAT.both;
+  const row=el('div','feat');
+  row.dataset.plat=f.platform; row.dataset.status=f.status;
+  row.dataset.text=(f.name+' '+(f.fr||'')+' '+(f.note||'')).toLowerCase();
+  row.innerHTML=`<span class="dot ${f.status}" title="${ST[f.status]}"></span>
+    <div class="fname"><span class="t">${f.name}</span> <span class="fr">${f.fr||''}</span>
+      ${f.note?`<div class="note">${f.note}</div>`:''}</div>
+    <div class="badges"><span class="plat ${p.c}">${p.t}</span>${f.version?`<span class="vbadge">v${f.version}</span>`:''}</div>`;
+  return row;
+}
+const grid=document.getElementById('grid');
+DATA.modules.forEach(m=>{
+  const card=el('div','mod'); card.dataset.mod=m.code;
+  const scr=[m.scr&&m.scr.app?`📱 ${m.scr.app}`:'', m.scr&&m.scr.cms?`🖥 ${m.scr.cms}`:''].filter(Boolean).join(' · ');
+  card.innerHTML=`<div class="mcode">${m.code} · ${m.fr||''}</div><div class="mname">${m.name}</div>${scr?`<div class="mscr">${scr}</div>`:''}`;
+  m.features.forEach(f=>card.appendChild(featRow(f)));
+  grid.appendChild(card);
+});
+
+// changelog
+if(DATA.changelog){
+  const cl=DATA.changelog;
+  document.getElementById('changelog').innerHTML=
+   `<div class="changelog"><h3>✅ ${cl.title}</h3><div class="cl-sub">${cl.sub||''}</div>
+     ${cl.items.map(i=>`<div class="cl-item"><span class="cl-code">${i.code}${i.ver?' · v'+i.ver:''}</span>
+       <div><b>${i.title}</b> <span class="d">${i.desc||''}</span></div></div>`).join('')}</div>`;
+}
+
+// filter
+let curPlat="";
+function applyFilter(){
+  const q=document.getElementById('q').value.trim().toLowerCase(), s=document.getElementById('fStatus').value;
+  document.querySelectorAll('.mod').forEach(card=>{
+    let shown=0;
+    card.querySelectorAll('.feat').forEach(f=>{
+      const okP=!curPlat|| f.dataset.plat===curPlat || f.dataset.plat==='both';
+      const okS=!s|| f.dataset.status===s;
+      const okQ=!q|| f.dataset.text.includes(q);
+      const ok=okP&&okS&&okQ; f.classList.toggle('hidden',!ok); if(ok)shown++;
+    });
+    card.classList.toggle('hidden',shown===0);
+  });
+}
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('.tab'); if(!b)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on')); b.classList.add('on');
+  curPlat=b.dataset.plat; applyFilter();
+});
+['q','fStatus'].forEach(id=>document.getElementById(id).addEventListener('input',applyFilter));
+</script>
+</body>
+</html>

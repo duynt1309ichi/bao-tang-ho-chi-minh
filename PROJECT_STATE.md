@@ -19,8 +19,8 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 |-------------------|-------------|--------------|------------------------|
 | audit-report.md   | BA + SA     | —            | không áp dụng (dự án mới) |
 | BRD.md            | BA          | APPROVED     | 2026-10-06             |
-| SRS.md            | BA          | NOT_STARTED  |                        |
-| function-map.html | BA          | NOT_STARTED  |                        |
+| SRS.md            | BA          | DONE         | 2026-10-06             |
+| function-map.html | BA          | DONE         | 2026-10-06             |
 | techstack.md      | SA          | NOT_STARTED  |                        |
 | HLD.md            | SA          | NOT_STARTED  |                        |
 | architecture.html | SA          | NOT_STARTED  |                        |
@@ -67,3 +67,4 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 - 2026-10-06 — BA viết `docs/ba/BRD.md` v0.1 → DONE. PO trình GATE-1.
 - 2026-10-06 — anh Duy trả lời câu hỏi mở: nộp đồ án bằng link web host (Vercel) cho giảng viên xem; tên sản phẩm "Bảo tàng Triết học". BRD → v0.2. PO trình lại GATE-1.
 - 2026-10-06 — anh Duy duyệt GATE-1 (BRD v1.0). Sang B2: BA viết SRS + function-map; SA brainstorm kiến trúc.
+- 2026-10-06 — BA viết `docs/ba/SRS.md` v0.1 (27 FR, 14 NFR, 4 điểm chờ xác nhận ở mục 8) + `docs/ba/function-map.html` → DONE. SA bắt đầu brainstorm kiến trúc.
