@@ -71,6 +71,19 @@ export function exhibitAtlas(list: Exhibit[], rooms: Room[]) {
       ctx.fillStyle = ACCENT;
       ctx.fillRect(pad, y, 40, 2);
       y += 12;
+      if (e.image) {
+        // Chân dung có ảnh thật: vẽ ảnh vào phần dưới ô khi tải xong.
+        const img = new Image();
+        const [top, bottom] = [y0 + y, y0 + c - 16];
+        img.onload = () => {
+          const hgt = bottom - top, w = (hgt * img.width) / img.height;
+          ctx.drawImage(img, x0 + (c - w) / 2, top, w, hgt);
+          tex.needsUpdate = true;
+        };
+        img.src = e.image.src;
+        ctx.restore();
+        return;
+      }
       const excerpt = e.quote ? `“${e.quote.text}”` : e.body.split('\n\n')[0];
       ctx.fillStyle = MUTED;
       ctx.font = `${e.quote ? 'italic ' : ''}400 14px ${FONT}`;

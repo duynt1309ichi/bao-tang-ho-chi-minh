@@ -28,6 +28,8 @@ export interface Exhibit {
   /** Ví dụ không có trong sách → nhãn "(minh họa)". */
   illustrative?: boolean;
   interactive?: { hint: string };
+  /** Chỉ hiện vật 🖼 có ảnh thật (FR-13 2c); `credit` là dòng nguồn ảnh + giấy phép, file có trong CREDITS.md. */
+  image?: { src: string; credit: string };
 }
 
 export interface QuizQuestion {

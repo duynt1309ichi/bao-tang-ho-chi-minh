@@ -1,5 +1,6 @@
 import { credits } from '../content/credits';
 import { QUALITIES, QUALITY_LABEL, type Quality } from '../core/quality';
+import { CHARACTER_LABEL, type CharacterId } from '../player/character';
 import type { Settings } from '../storage/settings';
 import { ABOUT_BOOK } from '../world/signs';
 import { h, openOverlay } from './dom';
@@ -11,6 +12,8 @@ export interface MenuActions {
   setSensitivity: (v: number) => void;
   setInvertY: (v: boolean) => void;
   setVolumes: (music: number, sfx: number) => void;
+  character: () => CharacterId;
+  setCharacter: (c: CharacterId) => void;
   isTouch: boolean;
   toLobby: () => void;
   /** null khi chưa khám phá đủ 63/63 (ẩn nút "Xem màn hoàn thành"). */
@@ -61,17 +64,24 @@ export function showPauseMenu(ui: HTMLElement, a: MenuActions) {
   );
 }
 
-/** SCR-13 — cài đặt (FR-22). Nhóm chọn nhân vật ẩn vì mới có một nhân vật (FSD SCR-13). */
+/** Nhóm nút chọn một (segmented, design.md mục 5). */
+function segmented<T extends string>(name: string, labelledby: string, values: readonly T[], labels: Record<T, string>, current: T, onPick: (v: T) => void) {
+  const group = h('div', { class: 'segmented', role: 'radiogroup', 'aria-labelledby': labelledby });
+  for (const v of values) {
+    const input = h('input', { type: 'radio', name, value: v });
+    input.checked = current === v;
+    input.addEventListener('change', () => onPick(v));
+    group.append(h('label', {}, input, h('span', {}, labels[v])));
+  }
+  return group;
+}
+
+/** SCR-13 — cài đặt (FR-22). */
 function showSettings(ui: HTMLElement, a: MenuActions, onBack: () => void) {
   const s = a.settings();
   const back = h('button', { class: 'btn' }, '← Quay lại');
-  const group = h('div', { class: 'segmented', role: 'radiogroup', 'aria-labelledby': 'q-label' });
-  for (const q of QUALITIES) {
-    const input = h('input', { type: 'radio', name: 'quality', value: q });
-    input.checked = s.quality === q;
-    input.addEventListener('change', () => a.setQuality(q));
-    group.append(h('label', {}, input, h('span', {}, QUALITY_LABEL[q])));
-  }
+  const group = segmented('quality', 'q-label', QUALITIES, QUALITY_LABEL, s.quality, a.setQuality);
+  const character = segmented('character', 'c-label', ['nam', 'nu'] as const, CHARACTER_LABEL, a.character(), a.setCharacter);
   const fmt = (v: number) => v.toFixed(1).replace('.', ',');
   const sens = h('input', { type: 'range', min: '0.1', max: '3', step: '0.1', id: 'sens', value: String(s.sensitivity) });
   const sensOut = h('output', { for: 'sens' }, fmt(s.sensitivity));
@@ -103,6 +113,7 @@ function showSettings(ui: HTMLElement, a: MenuActions, onBack: () => void) {
     h('div', { class: 'setting' }, h('label', { for: 'invert' }, 'Đảo trục dọc'), invert),
     music,
     sfx,
+    h('div', { class: 'setting' }, h('span', { id: 'c-label' }, 'Nhân vật'), character),
     h('div', { class: 'actions' }, back),
   );
   const close = openOverlay(ui, dialog, { onEsc: () => done(), scrim: false, focus: group.querySelector<HTMLInputElement>('input:checked') ?? back });

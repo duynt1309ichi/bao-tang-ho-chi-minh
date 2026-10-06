@@ -42,7 +42,7 @@ Căn cứ: [SRS v1.0](../ba/SRS.md), [HLD v1.0](HLD.md), [FSD](../ba/FSD.md), [d
 | quote | `{ text: string; author: string }` | | text ≤ 400 ký tự | trích nguyên văn ngắn |
 | pages | `PageRange[]` | ✓ | ≥ 1 phần tử; mọi trang nằm trong `Room.pages` của phòng chứa nó | `[[17,17],[22,22]]` |
 | illustrative | `boolean` | | mặc định `false` | nhãn "(minh họa)" |
-| image | `{ src: string; creditId: string }` | | chỉ với `portrait`; `src` dưới `/assets/img/`; `creditId` có trong credits | |
+| image | `{ src: string; credit: string }` | | chỉ với `portrait`; `src` dạng `/assets/img/<tên>.webp`; `credit` = dòng nguồn ảnh + giấy phép; file phải có dòng trong `CREDITS.md` (cập nhật ở M5) | |
 | model | `string` | | tên node trong GLB của khu, hoặc file `/assets/models/*.glb` | mô hình trên bục |
 | interactive | `{ hint: string }` | chỉ khi `kind = 'interactive'` | hint 1–120 ký tự | câu hướng dẫn SCR-08 |
 
@@ -127,9 +127,9 @@ Khóa `bttr.settings.v1` — kiểu `Settings`:
 
 Trường settings sai kiểu → dùng mặc định **riêng trường đó** (không bỏ cả khối). Kích thước tối đa ước tính: Progress ≈ 2 KB, Settings < 300 B. Không có trường định danh cá nhân (NFR-10).
 
-### 1.5 Manifest tải (`public/assets/manifest.json`, sinh lúc build)
+### 1.5 Dung lượng asset (`virtual:asset-sizes`, đọc lúc dev/build — cập nhật ở M5)
 
-`{ "bundles": { "initial": [{ "url": string, "bytes": number }], "A": […], "B": […], "C": […], "review": […] } }` — sinh bởi `scripts/build-manifest.ts` từ thư mục `public/assets/<bundle>/`; dùng để tính % tải (FR-01) và kiểm ngân sách dung lượng (HLD 4.2).
+`{ "/assets/<đường dẫn>": số byte }` cho mọi file trong `public/assets`, do plugin trong `vite.config.ts` đọc thẳng từ đĩa nên không lệch với file thật (thay cho `manifest.json` sinh riêng). Gói ban đầu = `core/loader.initialAssets(character)`: lightmap ngày/đêm, ảnh trời, texture 1K, GLB nhân vật đã chọn. Không có gói khu A/B/C/ôn tập vì hình học sinh bằng code (ADR-08). Ngân sách NFR-03 kiểm bằng test `core/loader.test.ts` (asset ban đầu < 12 MB, chừa phần JS + font).
 
 ## 2. Phân rã module
 
@@ -142,7 +142,7 @@ Trường settings sai kiểu → dùng mặc định **riêng trường đó** 
 | `core/transitions.ts` | Bảng chuyển trạng thái hợp lệ **(thuần)** | `canTransition(from, to): boolean` | — | FR-21 |
 | `core/renderer.ts` | Tạo `WebGLRenderer`, xử lý mất ngữ cảnh | `hasWebGL2(): boolean`, `createRenderer(canvas)`, `onContextLost(cb)` | three | FR-01 |
 | `core/loop.ts` | `requestAnimationFrame`, bước cố định | `loop.add(fn: (dt) => void)`, `stepsFor(elapsed): number[]` **(thuần)**: chia `elapsed` thành các bước ≤ 1/60 s, tối đa 6 bước, phần dư bỏ | — | FR-07 c |
-| `core/loader.ts` | Tải theo manifest, thử lại, tiến trình | `loadBundle(name, onProgress)`, `retryMissing()`, `fetchWithRetry(url, tries = 3, delayMs = 2000)` | three/GLTFLoader + MeshoptDecoder | FR-01 |
+| `core/loader.ts` | Tải gói ban đầu thành blob URL, thử lại, tiến trình theo byte | `loadBundle(urls, onProgress)` (gọi lại = chỉ tải file còn thiếu), `fetchWithRetry(url, onBytes, tries = 3, delayMs = 2000)`, `assetUrl(url)`, `initialAssets(c)` | `virtual:asset-sizes` | FR-01 |
 | `core/quality.ts` | Áp mức chất lượng, đo FPS, tự hạ | `applyQuality(q)`, `pickInitial(isTouch): Quality` **(thuần)**, `FpsMonitor.push(dt)` → `shouldDowngrade(): boolean` **(thuần)** | three, postprocessing, n8ao | FR-22 |
 | `core/device.ts` | Nhận diện cảm ứng | `isTouch(): boolean` = `matchMedia('(pointer: coarse)').matches` | — | FR-03, FR-06 |
 | `content/index.ts` | Truy cập dữ liệu, định dạng | `room(id)`, `exhibit(id)`, `exhibitsIn(room)`, `quizFor(room)`, `formatPages(ranges): string` **(thuần)** → `"128–134"`, `"17, 22"` | — | FR-08, FR-13, FR-16 |
@@ -154,8 +154,8 @@ Trường settings sai kiểu → dùng mặc định **riêng trường đó** 
 | `world/blockout.ts` | Sinh khối hộp từ `layout.json` khi chưa có GLB | `buildBlockout(layout, zone): Group` | three | FR-08 (ADR-04) |
 | `world/doors.ts` | Vùng kích hoạt ngưỡng cửa, cửa khu chưa tải | `doorCrossed(prevPos, pos): { room, entering } \| null` **(thuần)** | layout | FR-09 |
 | `world/environment.ts` (ngày/đêm), `world/fireworks.ts` | Chuyển ngày/đêm 1,5 s: trời, đèn, IBL, sương; trộn lightmap ngày/đêm (`blockout.night = k`, shader vá trong `world/blockout.ts`); pháo hoa `Points` | `env.setNight(k)`, `env.setIndoor(b, dt)`; `fireworks.density = PRESETS[q].fireworks`, `fireworks.update(dt, active, listener)` | three | FR-23 |
-| `player/character.ts` | Nạp nhân vật, AnimationMixer, cross-fade 0,2 s | `setCharacter(c)`, `play('idle' \| 'walk' \| 'run' \| 'look' \| 'interact')` | three | FR-02, FR-04 |
-| `player/keyboardInput.ts`, `player/touchInput.ts` | Thu điều khiển thành vector chung | `input.move: {x, z}`, `input.run`, `input.look: {dx, dy}`, `input.zoom`; `normalizeMove(keys)` **(thuần)** | — | FR-04, FR-06 |
+| `player/character.ts` | Nạp nhân vật (GLB CC0 Quaternius), AnimationMixer, cross-fade 0,2 s | `loadCharacter(c)`, `character.play('idle' \| 'walk' \| 'run')` — bỏ `look`/`interact` vì nhân vật bị ẩn khi xem hiện vật (M5) | three/GLTFLoader | FR-02, FR-04 |
+| `player/input.ts`, `player/touch.ts` | Thu điều khiển thành vector chung | `move: {right, forward}`, `run`, `consume() → {dx, dy, zoom}`; `normalizeMove(keys)`, `stickVector(dx, dy)` **(thuần)** | — | FR-04, FR-06 |
 | `player/collision.ts` | Viên nang 0,3 × 1,7 m với BVH, trượt theo tường | `resolveCapsule(capsule, bvh): Vector3` | three-mesh-bvh | FR-07 |
 | `player/camera.ts` | Camera thứ 3/thứ nhất, kẹp góc, zoom, chống xuyên tường | `camera.update(dt)`, `toggleView()`, `clampPitch(p)` **(thuần)**, `requestLock()` | three-mesh-bvh | FR-05 |
 | `player/controller.ts` | Ghép input + collision + animation; tốc độ BR-S02 | `controller.update(dt)`, `teleport(spawn)`, `pushBack(m)` | các module player, world | FR-04, FR-07 |
@@ -165,7 +165,7 @@ Trường settings sai kiểu → dùng mặc định **riêng trường đó** 
 | `exhibits/interactive/base.ts` | Khuôn chung 🎛 | `interface Interactive { start(): void; update(dt: number): void; isComplete(): boolean; reset(): void; dispose(): void }`; `runInteractive(id)` lo trạng thái Sẵn sàng → Đang thao tác → Hoàn thành | — | FR-14 |
 | `exhibits/interactive/<id>.ts` × 13 | Thao tác + điều kiện hoàn thành theo bảng FR-14 | cài đặt `Interactive` | three, audio | FR-14 |
 | `quiz/session.ts` | Một lượt trắc nghiệm | `startSession(room, rng)`, `answer(i)`, `finish(): { correct; total; reviewIds }`; `shuffle(options, answer, rng)` **(thuần)**; `addHints(ids)`, `hints: Set<ExhibitId>` (bộ nhớ phiên) | content, storage | FR-16, FR-17 |
-| `ui/*` | Mỗi màn SCR một file: `loading`, `title`, `characterSelect`, `tutorial`, `hud`, `minimap`, `roomPopup`, `exhibitPanel`, `quizPanel`, `completion`, `pauseMenu`, `settingsPanel`, `credits`, `rotateHint`, `toast`, `dialog` | mỗi file export `mount(root)`, `show(...)`, `hide()`; `ui/dom.ts` có `h(tag, props, ...children)` chỉ gán `textContent`/thuộc tính, không `innerHTML` | events, content, storage | theo FSD mục 2 |
+| `ui/*` | Mỗi màn SCR một file (M5 gộp SCR-01/02/03/15 + lớp mất ngữ cảnh vào `ui/screens.ts`): `loading`, `title`, `characterSelect`, `tutorial`, `hud`, `minimap`, `roomPopup`, `exhibitPanel`, `quizPanel`, `completion`, `pauseMenu`, `settingsPanel`, `credits`, `rotateHint`, `toast`, `dialog` | mỗi file export `mount(root)`, `show(...)`, `hide()`; `ui/dom.ts` có `h(tag, props, ...children)` chỉ gán `textContent`/thuộc tính, không `innerHTML` | events, content, storage | theo FSD mục 2 |
 | `audio/index.ts` | Nhạc nền, bước chân, hiệu ứng | `unlock()`, `setMuted(b)`, `setVolumes(m, s)`, `play(name)`, `footstep()` | three/AudioListener | FR-24 |
 | `main.ts` | Khởi tạo theo thứ tự HLD 4.2 | — | tất cả | FR-01 |
 
@@ -174,7 +174,9 @@ Trường settings sai kiểu → dùng mặc định **riêng trường đó** 
 | File | Việc | Chạy khi |
 |------|------|---------|
 | `scripts/validate-content.ts` | Gọi `validateContent()` trên `src/content/*` + `layout.json` + đối chiếu `CREDITS.md` và file trong `public/`; in lỗi, thoát mã 1 nếu có lỗi | `npm run build` |
-| `scripts/build-manifest.ts` | Sinh `manifest.json` (mục 1.5), in bảng dung lượng, thoát mã 1 nếu vượt ngân sách HLD 4.2 | `npm run build` |
+| `vite.config.ts` (plugin `asset-sizes`) | Sinh `virtual:asset-sizes` (mục 1.5) | `npm run dev`, `npm run build` |
+| `tools/convert_portraits.py` | Ảnh chân dung Wikimedia → WebP 480 × 640 trong `public/assets/img/` | tay (Pillow) |
+| `tools/blender/prepare_characters.py` | GLB nhân vật → giữ 3 hoạt ảnh, xuất `public/assets/characters/` | tay (Blender) |
 | `scripts/export-bake.mjs` | Chạy `scripts/bake-scene.ts` qua Vite: xuất hình học + uv1 lightmap + đèn ra `assets-src/bake/scene.obj`, `scene.json` (ADR-08) | khi đổi `layout.json` / hình học |
 | `tools/blender/bake_lightmap.py` | Bake Cycles + khử nhiễu OIDN → `public/assets/lightmap.webp`, `lightmap.json` (`scale`) | sau `export-bake` |
 | `tools/blender/convert_assets.py` | Texture CC0 trong `assets-src/` → WebP 1K/2K; HDRI → `sky.webp` | khi thêm asset |
@@ -295,5 +297,5 @@ quá 5 s -> hiện nút "Tải lại trang"
 | `quiz/*` | FR-16, FR-17 |
 | `ui/*` | FR-03, FR-09 → FR-11, FR-18, FR-20 → FR-22, FR-25, FR-27 · NFR-07, NFR-08, NFR-14 |
 | `audio/*` | FR-24 |
-| `scripts/build-manifest.ts` | FR-01 · NFR-03 |
+| `vite.config.ts`, `core/loader.test.ts` | FR-01 · NFR-03 |
 | `vercel.json` | NFR-09, NFR-12 |

@@ -37,7 +37,8 @@ export class DesktopInput {
     addEventListener('blur', () => this.keys.clear());
     document.addEventListener('visibilitychange', () => this.keys.clear());
 
-    canvas.addEventListener('click', () => {
+    canvas.addEventListener('click', (e) => {
+      if ((e as PointerEvent).pointerType === 'touch') return; // cảm ứng xoay bằng kéo ngón (player/touch.ts)
       if (document.pointerLockElement !== canvas) canvas.requestPointerLock?.()?.catch?.(() => {});
     });
     // Có pointer lock: di chuột là xoay. Không có (bị từ chối): giữ chuột trái và kéo (FR-05 1b).

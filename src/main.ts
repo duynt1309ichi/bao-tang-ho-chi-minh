@@ -10,13 +10,16 @@ import { audio } from './audio';
 import { exhibit, exhibits, quiz, roomNo, rooms } from './content';
 import type { AreaId, RoomId } from './content/types';
 import { Graphics } from './core/graphics';
+import { initialAssets, loadBundle } from './core/loader';
 import { stepsFor } from './core/loop';
 import { FpsMonitor, lower, PRESETS, QUALITY_LABEL, type Quality } from './core/quality';
 import { pickTarget } from './exhibits/proximity';
 import { hints } from './quiz/session';
 import { CameraFly, FollowCamera } from './player/camera';
+import { loadCharacter, type CharacterId } from './player/character';
 import { DesktopInput } from './player/input';
 import { Player } from './player/player';
+import { TouchInput } from './player/touch';
 import { kv } from './storage/kv';
 import { ProgressStore } from './storage/progress';
 import { clampSensitivity, SettingsStore } from './storage/settings';
@@ -26,33 +29,35 @@ import { createMinimap } from './ui/minimap';
 import { showExhibitPanel } from './ui/exhibitPanel';
 import { showPauseMenu } from './ui/pauseMenu';
 import { showQuizPanel } from './ui/quizPanel';
+import { createRotateHint, showCharacterSelect, showLoading, showMessageScreen, showTitle, watchContextLoss } from './ui/screens';
 import { showTutorial } from './ui/tutorial';
 import { buildBlockout } from './world/blockout';
 import { setupEnvironment } from './world/environment';
 import { createFireworks } from './world/fireworks';
 import { areaAt, areaName, layout } from './world/layout';
 
-// Mốc M4: hiện vật tương tác 🎛, ngày/đêm + pháo hoa, âm thanh, bản đồ nhỏ — trên nền đồ họa M3.
+// Mốc M5: màn tải / mở đầu / chọn nhân vật, nhân vật có hoạt ảnh, điều khiển cảm ứng — trên nền M1–M4.
 const canvas = document.querySelector<HTMLCanvasElement>('#scene')!;
 const ui = document.querySelector<HTMLDivElement>('#ui')!;
 
 if (!document.createElement('canvas').getContext('webgl2')) {
-  ui.replaceChildren(
-    h('div', { class: 'panel panel-center' },
-      h('h1', {}, 'Không hỗ trợ WebGL2'),
-      h('p', {}, 'Trình duyệt hoặc máy của bạn không hỗ trợ WebGL2 nên không chạy được bảo tàng 3D. Hãy mở bằng Chrome hoặc Edge bản mới nhất.'),
-    ),
-  );
+  showMessageScreen(ui, 'Không hỗ trợ WebGL2', 'Trình duyệt hoặc máy của bạn không hỗ trợ WebGL2 nên không chạy được bảo tàng 3D. Hãy mở bằng Chrome hoặc Edge bản mới nhất.');
 } else {
   start();
 }
 
 type Target = { id: string; x: number; z: number; room?: RoomId };
+/** Cảnh nền đang hiện: màn mở đầu (camera bay vòng), chọn nhân vật (camera nhìn mặt nhân vật), hoặc đang chơi. */
+type Mode = 'title' | 'select' | 'play';
 
-function start() {
+async function start() {
   canvas.tabIndex = -1;
   const isTouch = matchMedia('(pointer: coarse)').matches;
   const settings = SettingsStore.load(isTouch);
+  // SCR-01 hiện ngay, trước khi dựng cảnh (vẽ atlas chữ mất vài trăm ms).
+  const loading = showLoading(ui);
+  watchContextLoss(canvas, ui);
+  await new Promise((r) => (requestAnimationFrame(r), setTimeout(r, 100))); // tab ẩn thì rAF không chạy
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(60, 1, 0.05, 200);
@@ -63,19 +68,18 @@ function start() {
   const { collider } = museum;
   scene.add(museum.group);
   const env = setupEnvironment(scene, gfx.renderer, sun, spot, museum.spots);
-  museum.loadLightmap().catch((e) => console.error('Không tải được lightmap', e));
   const fireworks = createFireworks(scene);
   const applyQuality = (q: Quality, announce = false) => {
     gfx.apply(q);
     fireworks.density = PRESETS[q].fireworks;
-    const loading = museum.setTextureSize(PRESETS[q].texture);
+    const textures = museum.setTextureSize(PRESETS[q].texture);
     if (announce && PRESETS[q].texture === '2k') {
       toast('Đang tải texture chất lượng cao…');
-      loading.then(() => toast('Đã tải xong texture chất lượng cao.'));
+      textures.then(() => toast('Đã tải xong texture chất lượng cao.'));
     }
-    loading.catch((e) => console.error('Không tải được texture', e));
+    textures.catch((e) => console.error('Không tải được texture', e));
+    return textures;
   };
-  applyQuality(settings.value.quality);
   const bvh = new MeshBVH(collider);
 
   const follow = new FollowCamera(camera);
@@ -83,18 +87,31 @@ function start() {
   follow.invertY = settings.value.invertY;
   const fly = new CameraFly();
   const player = new Player();
-  player.object.traverse((o) => (o.castShadow = true));
   scene.add(player.object);
-  player.teleport(layout.spawns.courtyard);
-  follow.yaw = player.object.rotation.y + Math.PI; // camera ở sau lưng
 
-  // Tiến độ (FR-15, FR-19).
+  // Tiến độ (FR-15, FR-19) — đọc trước khi tải để biết nhân vật nào nằm trong gói ban đầu.
   const content = {
     exhibitIds: new Set(exhibits.map((e) => e.id)),
     quizTotals: Object.fromEntries(rooms.map((r) => [r.id, quiz.filter((q) => q.room === r.id).length])),
   };
   const { store: progress, status } = ProgressStore.load(content);
   const total = exhibits.length;
+  const returning = progress.exploredCount > 0 || Boolean(progress.value.character);
+
+  // Gói ban đầu (FR-01 bước 2, 2a): lỗi thì hiện MSG-02, "Thử lại" chỉ tải file còn thiếu.
+  // Giải mã (ảnh, GLB) cũng nằm trong vòng thử lại để file hỏng hiện màn lỗi thay vì treo màn tải.
+  for (;;) {
+    try {
+      await loadBundle(initialAssets(progress.value.character ?? 'nam'), loading.progress);
+      const [first] = await Promise.all([loadCharacter(progress.value.character ?? 'nam'), museum.loadLightmap(), env.loadSky(), applyQuality(settings.value.quality)]);
+      player.setCharacter(first);
+      break;
+    } catch (e) {
+      console.error(e);
+      await loading.error();
+    }
+  }
+  player.teleport(returning ? layout.spawns.lobby : layout.spawns.courtyard); // FR-01 bước 5
 
   // HUD (SCR-05).
   const areaLabel = h('div', { class: 'hud-area' });
@@ -111,8 +128,11 @@ function start() {
   const menuBtn = h('button', { class: 'icon-btn', 'aria-label': 'Menu' }, '☰');
   const minimap = createMinimap(layout, progress, hints);
   const hudRight = h('div', { class: 'hud-right' }, h('div', { class: 'hud-buttons' }, soundBtn, nightBtn, helpBtn, fullBtn, menuBtn), minimap.el);
-  ui.replaceChildren(hud, hudRight, h('div', { class: 'hud-bottom' }, prompt, hint));
+  const viewBtn = h('button', { class: 'btn primary view-btn', hidden: '' }, 'Xem'); // SCR-05 element 10, chỉ cảm ứng
+  loading.done();
+  ui.append(hud, hudRight, h('div', { class: 'hud-bottom' }, prompt, hint), viewBtn);
   const toast = createToasts(ui);
+  const rotateHint = createRotateHint(ui);
 
   let warnedStorage = false;
   const renderProgress = () => {
@@ -125,7 +145,6 @@ function start() {
   };
   progress.onChange = renderProgress;
   renderProgress();
-  if (status === 'reset') toast('Không đọc được tiến độ cũ nên bảo tàng bắt đầu lại từ đầu.', 'warn');
 
   // Mục tiêu tương tác: hiện vật và trạm trắc nghiệm (BR-S09).
   const targets: Target[] = [
@@ -145,13 +164,16 @@ function start() {
   const flyTime = (s: number) => (reducedMotion() ? 0 : s);
 
   const input = new DesktopInput(canvas);
+  const touch = new TouchInput(canvas, ui);
+  document.addEventListener('gesturestart', (e) => e.preventDefault()); // Safari iOS: chụm hai ngón không phóng to trang (FR-06)
+  viewBtn.addEventListener('click', () => input.onInteract());
   input.onToggleView = () => {
     follow.firstPerson = !follow.firstPerson;
     player.visible = !follow.firstPerson;
   };
   input.onInteract = () => {
     if (!target || overlayOpen()) return;
-    input.enabled = false;
+    controls(false);
     if (target.room) {
       showQuizPanel(ui, target.room, progress, resume);
       return;
@@ -172,19 +194,22 @@ function start() {
       toast(`Đã khám phá: ${e.title} (${progress.exploredCount}/${total})`);
       if (progress.exploredCount === total && !progress.value.completedShown) {
         progress.setCompletedShown();
-        input.enabled = false;
+        controls(false);
         showCompletion(ui, total, () => (player.teleport(layout.spawns['review-door']), resume()), resume);
       }
     });
   };
+  function controls(on: boolean) {
+    input.enabled = touch.enabled = on;
+  }
   function resume() {
-    input.enabled = !overlayOpen();
+    controls(!overlayOpen());
   }
 
   // SCR-12: nút ☰, hoặc ESC (trình duyệt nhả pointer lock trước rồi mới tới đây).
   const openMenu = () => {
     if (overlayOpen()) return;
-    input.enabled = false;
+    controls(false);
     showPauseMenu(ui, {
       settings: () => settings.value,
       setQuality: (q) => {
@@ -203,7 +228,9 @@ function start() {
         toast('Đã đưa bạn về sảnh.');
       },
       showCompletion: progress.exploredCount === total ? () => showCompletion(ui, total, () => (player.teleport(layout.spawns['review-door']), resume()), resume) : null,
-      // FR-20: xóa rồi khởi động lại (chưa có màn mở đầu SCR-02 — tải lại trang là bắt đầu lại từ khuôn viên).
+      character: () => progress.value.character ?? 'nam',
+      setCharacter: (c) => (progress.setCharacter(c), showCharacter(c)),
+      // FR-20: xóa rồi tải lại trang → màn mở đầu như lần đầu (có chọn nhân vật, hướng dẫn).
       resetProgress: () => (progress.reset(), location.reload()),
       onClose: resume,
     });
@@ -212,14 +239,13 @@ function start() {
   // SCR-04: nút "?" trên HUD; tự mở lần chơi đầu (FR-03).
   const openTutorial = (first: boolean) => {
     if (overlayOpen()) return;
-    input.enabled = false;
+    controls(false);
     showTutorial(ui, isTouch, () => {
       if (first) progress.setTutorialSeen();
       resume();
     });
   };
   helpBtn.addEventListener('click', () => openTutorial(false));
-  if (!progress.value.tutorialSeen) openTutorial(true);
   document.addEventListener('pointerlockchange', () => {
     if (document.pointerLockElement !== canvas) openMenu();
   });
@@ -258,7 +284,7 @@ function start() {
   // Bản đồ (FR-10): bấm bản đồ nhỏ hoặc M → SCR-09.
   const openMap = () => {
     if (overlayOpen()) return;
-    input.enabled = false;
+    controls(false);
     minimap.openLarge({ x: player.feet.x, z: player.feet.z, yaw: player.object.rotation.y }, resume);
   };
   minimap.el.addEventListener('click', openMap);
@@ -311,21 +337,58 @@ function start() {
   addEventListener('resize', resize);
   resize();
 
+  // Đổi mô hình nhân vật (SCR-03 xem trước, SCR-13 cài đặt); bấm đổi liên tục thì giữ lựa chọn cuối.
+  let wanted: CharacterId = progress.value.character ?? 'nam';
+  const showCharacter = (c: CharacterId) => {
+    wanted = c;
+    loadCharacter(c).then(
+      (ch) => wanted === c && player.setCharacter(ch),
+      () => toast('Không tải được nhân vật. Kiểm tra kết nối mạng rồi chọn lại.', 'warn'),
+    );
+  };
+
+  // Luồng vào bảo tàng (FR-01 bước 4–5, FR-02, FR-03): SCR-02 → [SCR-03] → [SCR-04] → chơi.
+  let mode: Mode = 'title';
+  controls(false);
+  if (status === 'reset') toast('Không đọc được tiến độ cũ nên bảo tàng bắt đầu lại từ đầu.', 'warn');
+  const play = () => {
+    mode = 'play';
+    follow.yaw = player.object.rotation.y + Math.PI; // camera ở sau lưng
+    fly.start(camera, flyTime(1));
+    resume();
+  };
+  const afterCharacter = () => (progress.value.tutorialSeen ? play() : showTutorial(ui, isTouch, () => (progress.setTutorialSeen(), play())));
+  showTitle(ui, { returning, explored: progress.exploredCount, total }, () => {
+    if (progress.value.character) return afterCharacter();
+    mode = 'select';
+    fly.start(camera, flyTime(0.8));
+    showCharacterSelect(ui, 'nam', showCharacter, (c) => {
+      progress.setCharacter(c);
+      showCharacter(c);
+      afterCharacter();
+    });
+  });
+
   let last = performance.now();
   gfx.renderer.setAnimationLoop((now) => {
     const playing = !overlayOpen();
-    const { dx, dy, zoom } = input.consume();
-    follow.rotate(dx, dy);
-    follow.zoomBy(zoom);
-    hint.hidden = input.locked || !playing;
+    const d = input.consume();
+    const t = touch.consume();
+    follow.rotate(d.dx + t.dx, d.dy + t.dy);
+    follow.zoomBy(d.zoom + t.zoom);
+    const byTouch = touch.move.right !== 0 || touch.move.forward !== 0;
+    const move = byTouch ? touch.move : input.move;
+    const run = byTouch ? touch.run : input.run;
+    hint.hidden = isTouch || input.locked || !playing;
     hud.hidden = hudRight.hidden = !playing;
+    rotateHint.update(isTouch && playing && innerHeight > innerWidth);
 
     const elapsed = (now - last) / 1000;
     for (const dt of stepsFor(elapsed)) {
       if (playing) {
         follow.forward(forward);
         const faceYaw = follow.firstPerson ? follow.yaw + Math.PI : undefined;
-        const fell = player.update(dt, input.move, input.run, forward, bvh, faceYaw);
+        const fell = player.update(dt, move, run, forward, bvh, faceYaw);
         const here = areaAt(layout.areas, player.feet.x, player.feet.z);
         if (fell || !here) {
           player.teleport(layout.spawns.lobby);
@@ -335,7 +398,17 @@ function start() {
     }
     last = now;
 
-    if (viewing) {
+    if (mode === 'title') {
+      // SCR-02: camera bay chậm qua lại trước mặt tiền bảo tàng (đứng yên nếu giảm chuyển động).
+      const a = reducedMotion() ? 0.35 : Math.sin(now / 9000) * 0.6;
+      camera.position.set(-14 - Math.cos(a) * 16, 3.5, Math.sin(a) * 16);
+      camera.lookAt(-14, 4.5, 0);
+    } else if (mode === 'select') {
+      // SCR-03: nhìn thẳng vào mặt nhân vật để xem trước.
+      const f = player.feet, yaw = player.object.rotation.y;
+      camera.position.set(f.x + Math.sin(yaw) * 3.6, 1.5, f.z + Math.cos(yaw) * 3.6);
+      camera.lookAt(f.x, 0.35, f.z); // nhìn thấp để nhân vật nằm nửa trên, không bị bảng chọn che
+    } else if (viewing) {
       camera.position.copy(viewing.pos);
       camera.lookAt(viewing.look);
       const wide = innerWidth >= 768;
@@ -348,7 +421,8 @@ function start() {
 
     target = playing ? pickTarget(player.feet.x, player.feet.z, player.object.rotation.y, targets) : null;
     highlight.visible = Boolean(target);
-    prompt.hidden = !target;
+    prompt.hidden = isTouch || !target;
+    viewBtn.hidden = !isTouch || !target;
     if (target) {
       highlight.position.set(target.x, 0, target.z);
       highlight.material.opacity = reducedMotion() ? 1 : 0.65 + 0.35 * Math.sin((now / 1500) * Math.PI * 2);
@@ -373,13 +447,15 @@ function start() {
     museum.night = nightK;
     fireworks.update(dt, nightK > 0.6, player.feet);
     minimap.update(now, { x: player.feet.x, z: player.feet.z, yaw: player.object.rotation.y });
-    const moving = playing && (input.move.right !== 0 || input.move.forward !== 0);
+    const moving = playing && (move.right !== 0 || move.forward !== 0);
+    player.character?.play(moving ? (run ? 'run' : 'walk') : 'idle');
+    player.character?.update(dt);
     stepTimer = moving ? stepTimer - dt : 0;
     if (moving && stepTimer <= 0) {
       audio.footstep(surfaceAt(player.feet.x, player.feet.z, area));
-      stepTimer = input.run ? 0.32 : 0.5;
+      stepTimer = run ? 0.32 : 0.5;
     }
-    watchFps(elapsed, playing);
+    watchFps(elapsed, playing && mode === 'play');
     gfx.render();
   });
 }

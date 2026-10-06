@@ -16,6 +16,12 @@ const KIND: Record<ExhibitKind, string> = {
 /** Nội dung đầy đủ (SCR-07 element 4–8). */
 function content(e: Exhibit) {
   const body = h('div', { class: 'exhibit-body' });
+  if (e.image) {
+    // FR-13 2c: ảnh + nguồn ảnh; ảnh lỗi thì báo MSG-13, bảng vẫn mở và vẫn tính khám phá.
+    const img = h('img', { src: e.image.src, alt: e.title, width: '480', height: '640', decoding: 'async' });
+    img.addEventListener('error', () => img.replaceWith(h('p', { class: 'muted' }, 'Không tải được hình ảnh.')));
+    body.append(h('figure', { class: 'portrait' }, img, h('figcaption', {}, e.image.credit)));
+  }
   for (const para of e.body.split('\n\n')) body.append(h('p', {}, para));
   if (e.quote) body.append(h('blockquote', {}, h('p', {}, `“${e.quote.text}”`), h('footer', {}, `— ${e.quote.author}`)));
   if (e.illustrative) body.append(h('span', { class: 'badge' }, '(minh họa)'));
@@ -27,15 +33,24 @@ function content(e: Exhibit) {
 export function showExhibitPanel(ui: HTMLElement, e: Exhibit, onClose: () => void) {
   const r = room(e.room);
   const closeBtn = h('button', { class: 'icon-btn', 'aria-label': 'Đóng' }, '✕');
+  // Điện thoại: bảng chiếm 60% dưới; bấm tay kéo để mở toàn màn / thu lại (FSD SCR-07).
+  const handle = h('button', { class: 'sheet-handle', 'aria-label': 'Mở rộng bảng', 'aria-expanded': 'false' });
   const scroll = h('div', { class: 'panel-scroll', tabindex: '0' });
   const dialog = h(
     'aside',
     { class: 'panel panel-side', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'exhibit-title' },
+    handle,
     h('header', { class: 'panel-head' }, h('p', { class: 'kicker' }, KIND[e.kind]), closeBtn),
     h('h2', { id: 'exhibit-title' }, e.title),
     h('p', { class: 'muted' }, `${roomNo(r.id)} · ${r.title}`),
     scroll,
   );
+
+  const expand = (open: boolean) => {
+    dialog.classList.toggle('expanded', open);
+    handle.setAttribute('aria-expanded', String(open));
+  };
+  handle.addEventListener('click', () => expand(!dialog.classList.contains('expanded')));
 
   // 🎛: máy trạng thái Sẵn sàng → Đang thao tác → Hoàn thành; đóng giữa chừng thì lần sau lại từ Sẵn sàng.
   const factory = e.interactive && INTERACTIVES[e.id];

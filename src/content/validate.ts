@@ -5,7 +5,7 @@ const KINDS = new Set(['portrait', 'text', 'model', 'interactive']);
 export const EXPECTED = { exhibits: 63, interactive: 13 };
 
 /**
- * Luật toàn vẹn dữ liệu FR-26 (trừ phần asset — chưa có asset ngoài). Trả về danh sách lỗi
+ * Luật toàn vẹn dữ liệu FR-26 (phần asset kiểm bằng file thật trong content.test.ts). Trả về danh sách lỗi
  * dạng "<mã>: <lý do>", rỗng = đạt. Hàm thuần; chạy trong `npm test` và `npm run build`.
  */
 export function validateContent(input: { rooms: Room[]; exhibits: Exhibit[]; quiz: QuizQuestion[]; layout: Layout }): string[] {
@@ -31,6 +31,7 @@ export function validateContent(input: { rooms: Room[]; exhibits: Exhibit[]; qui
     if (e.quote && (!e.quote.text.trim() || e.quote.text.length > 400 || !e.quote.author.trim())) err(e.id, 'quote phải có text ≤ 400 ký tự và author');
     if ((e.kind === 'interactive') !== Boolean(e.interactive)) err(e.id, 'chỉ hiện vật interactive mới (và phải) có interactive.hint');
     if (e.interactive && (!e.interactive.hint.trim() || e.interactive.hint.length > 120)) err(e.id, 'hint phải dài 1–120 ký tự');
+    if (e.image && (e.kind !== 'portrait' || !/^\/assets\/img\/[a-z0-9-]+\.webp$/.test(e.image.src) || !e.image.credit.trim())) err(e.id, 'image chỉ cho portrait, src dạng /assets/img/<tên>.webp và phải có credit');
     const room = roomById.get(e.room);
     if (!room) err(e.id, `phòng lạ "${e.room}"`);
     if (!e.pages?.length) err(e.id, 'thiếu trang');

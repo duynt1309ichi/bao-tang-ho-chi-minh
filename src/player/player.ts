@@ -1,27 +1,29 @@
 import * as THREE from 'three';
 import type { MeshBVH } from 'three-mesh-bvh';
 import type { Spawn } from '../content/types';
-import { CAPSULE, resolveCapsule } from './collision';
+import type { Character } from './character';
+import { resolveCapsule } from './collision';
 
 export const SPEED = { walk: 2.0, run: 4.5 }; // m/s — BR-S02
 const TURN_RATE = 15; // đạt hướng mới trong ~0,2 s
 const FALL_LIMIT = -2;
 
-/** Nhân vật tạm (khối viên nang có "mũi" chỉ hướng) — thay bằng mô hình có hoạt ảnh ở mốc sau. */
+/** Nhân vật người chơi: vị trí, hướng, va chạm; mô hình + hoạt ảnh gắn bằng `setCharacter` (FR-02, FR-04). */
 export class Player {
   readonly object = new THREE.Group();
   readonly feet = this.object.position;
-  private body: THREE.Group;
+  character: Character | null = null;
+  private body = new THREE.Group();
 
   constructor() {
-    const mat = new THREE.MeshStandardMaterial({ color: '#d9b26a', roughness: 0.6 });
-    this.body = new THREE.Group();
-    const torso = new THREE.Mesh(new THREE.CapsuleGeometry(CAPSULE.radius, CAPSULE.height - CAPSULE.radius * 2, 4, 12), mat);
-    torso.position.y = CAPSULE.height / 2;
-    const nose = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 0.2), new THREE.MeshStandardMaterial({ color: '#1a1712' }));
-    nose.position.set(0, 1.45, CAPSULE.radius);
-    this.body.add(torso, nose);
     this.object.add(this.body);
+  }
+
+  /** Đổi mô hình ngay, giữ vị trí và hướng (FR-02 2a). */
+  setCharacter(c: Character) {
+    this.character = c;
+    this.body.clear();
+    this.body.add(c.object);
   }
 
   set visible(v: boolean) {

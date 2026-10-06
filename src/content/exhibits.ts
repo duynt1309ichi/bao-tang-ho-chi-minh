@@ -57,10 +57,12 @@ export const exhibits: Exhibit[] = [
   },
   {
     id: 'a2-mac', room: 'P02', kind: 'portrait', title: 'C. Mác (1818 – 1883)', pages: [[60, 64]],
+    image: { src: '/assets/img/mac.webp', credit: 'Ảnh: John Jabez Edwin Mayall, 1875 · phạm vi công cộng · Wikimedia Commons' },
     body: 'C. Mác sinh ngày 5/5/1818 tại Trier (Phổ). Tháng 4/1841 ông nhận bằng tiến sĩ triết học tại Đại học Jena.\n\nNăm 1842 ông làm biên tập viên Nhật báo tỉnh Ranh; cuối năm 1843 sang Paris. Ông mất ngày 14/3/1883.',
   },
   {
     id: 'a2-angghen', room: 'P02', kind: 'portrait', title: 'Ph. Ăngghen (1820 – 1895)', pages: [[59, 59], [64, 66]],
+    image: { src: '/assets/img/angghen.webp', credit: 'Ảnh: William Hall, 1877 · phạm vi công cộng · Wikimedia Commons' },
     body: 'Ph. Ăngghen sinh ngày 28/11/1820 tại Barmen. Từ năm 1842 ông sống ở Manchester, chứng kiến phong trào Hiến chương và viết tác phẩm Tình cảnh giai cấp công nhân Anh.\n\nTháng 8/1844 ông gặp C. Mác tại Paris, mở đầu tình bạn và sự cộng tác suốt đời của hai ông.',
     quote: { text: 'những truyền thuyết của đời xưa kể về tình bạn của con người', author: LENIN },
   },
@@ -76,6 +78,7 @@ export const exhibits: Exhibit[] = [
   },
   {
     id: 'a2-lenin', room: 'P02', kind: 'portrait', title: 'V.I. Lênin (1870 – 1924)', pages: [[79, 89]],
+    image: { src: '/assets/img/lenin.webp', credit: 'Ảnh: Pavel Zhukov, 1920 · phạm vi công cộng · Wikimedia Commons' },
     body: 'V.I. Lênin sinh ngày 22/4/1870 tại Simbirsk. Ông bảo vệ và phát triển triết học Mác trong thời đại đế quốc chủ nghĩa.\n\nCác tác phẩm và dấu mốc tiêu biểu: Chủ nghĩa duy vật và chủ nghĩa kinh nghiệm phê phán (1908), Bút ký triết học (1914 – 1916), Nhà nước và cách mạng (1917), Chính sách kinh tế mới (NEP).',
   },
   {
@@ -329,6 +332,7 @@ export const exhibits: Exhibit[] = [
   },
   {
     id: 'c10-ho-chi-minh', room: 'P10', kind: 'portrait', title: 'Hồ Chí Minh về con người', pages: [[478, 489]],
+    image: { src: '/assets/img/ho-chi-minh.webp', credit: 'Ảnh: Hồ Chí Minh năm 1946, không rõ tác giả · phạm vi công cộng · Wikimedia Commons' },
     body: 'Hồ Chí Minh đặt con người vào vị trí trung tâm: "Nước độc lập mà dân không hưởng hạnh phúc tự do, thì độc lập cũng chẳng có nghĩa lý gì".\n\nCon người toàn diện phải có cả đức và tài, trong đó đức là gốc.',
     quote: { text: 'Vì lợi ích mười năm thì phải trồng cây, vì lợi ích trăm năm thì phải trồng người', author: HCM },
   },

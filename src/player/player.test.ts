@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { clampPitch } from './camera';
 import { resolveCapsule } from './collision';
 import { normalizeMove } from './input';
+import { stickVector } from './touch';
 
 describe('normalizeMove (FR-04)', () => {
   it('đi chéo có tốc độ bằng đi thẳng', () => {
@@ -46,5 +47,21 @@ describe('resolveCapsule (FR-07)', () => {
       resolveCapsule(feet, bvh);
     }
     expect(feet.z).toBeGreaterThan(0.19);
+  });
+});
+
+describe('stickVector (FR-06)', () => {
+  it('kéo lên = đi tới, không chạy khi ≤ 60% bán kính', () => {
+    const s = stickVector(0, -30, 56);
+    expect(s.move.forward).toBeCloseTo(1);
+    expect(s.run).toBe(false);
+  });
+  it('kéo quá 60% bán kính thì chạy; ra ngoài đế vẫn chỉ là hướng đơn vị', () => {
+    const s = stickVector(200, 0, 56);
+    expect(s.move.right).toBeCloseTo(1);
+    expect(s.run).toBe(true);
+  });
+  it('chạm gần tâm thì đứng yên', () => {
+    expect(stickVector(3, 2, 56).move).toEqual({ right: 0, forward: 0 });
   });
 });

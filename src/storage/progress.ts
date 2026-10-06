@@ -119,6 +119,11 @@ export class ProgressStore {
     this.save();
   }
 
+  setCharacter(c: 'nam' | 'nu') {
+    this.value.character = c;
+    this.save();
+  }
+
   setTutorialSeen() {
     this.value.tutorialSeen = true;
     this.save();

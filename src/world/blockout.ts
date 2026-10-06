@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { exhibits } from '../content/exhibits';
 import { rooms } from '../content/rooms';
 import type { Layout } from '../content/types';
+import { assetUrl } from '../core/loader';
 import { ZONE_COLORS } from '../ui/tokens';
 import { buildGeometry, MATS, REVIEW_COLOR, signAreas, type CanvasName, type MatSpec, type TexName } from './geometry';
 import { aboutPanel, exhibitAtlas, museumMapPanel, signAtlas, welcomePanel } from './signs';
@@ -19,7 +20,7 @@ const TEX_MAPS: Record<TexName, ('color' | 'normal' | 'rough')[]> = {
 const SLOT = { color: 'map', normal: 'normalMap', rough: 'roughnessMap' } as const;
 
 const loader = new THREE.TextureLoader();
-const load = (url: string) => loader.loadAsync(url);
+const load = (url: string) => loader.loadAsync(assetUrl(url));
 
 /**
  * Dựng mesh bảo tàng từ hình học chung (world/geometry.ts): một mesh mỗi nhóm vật liệu,
@@ -115,7 +116,7 @@ export function buildBlockout(layout: Layout) {
 }
 
 async function lightmap(name: string) {
-  const [tex, meta] = await Promise.all([load(`/assets/${name}.webp`), fetch(`/assets/${name}.json`).then((r) => r.json() as Promise<{ scale: number }>)]);
+  const [tex, meta] = await Promise.all([load(`/assets/${name}.webp`), fetch(assetUrl(`/assets/${name}.json`)).then((r) => r.json() as Promise<{ scale: number }>)]);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.channel = 1;
   return [tex, meta.scale] as const;

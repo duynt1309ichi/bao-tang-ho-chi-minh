@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { assetUrl } from '../core/loader';
 import type { Spot } from './geometry';
 
 // Trời: HDRI Poly Haven "kloofendal_48d_partly_cloudy_puresky" (CC0), đổi sang ảnh LDR 2048 × 1024
@@ -23,11 +24,12 @@ const NIGHT_FOG = '#0b1426';
  */
 export function setupEnvironment(scene: THREE.Scene, renderer: THREE.WebGLRenderer, light: THREE.DirectionalLight, spot: THREE.SpotLight, spots: Spot[]) {
   scene.background = new THREE.Color('#9cc2e4');
-  new THREE.TextureLoader().load('/assets/sky.webp', (tex) => {
-    tex.mapping = THREE.EquirectangularReflectionMapping;
-    tex.colorSpace = THREE.SRGBColorSpace;
-    scene.background = tex;
-  });
+  const loadSky = () =>
+    new THREE.TextureLoader().loadAsync(assetUrl('/assets/sky.webp')).then((tex) => {
+      tex.mapping = THREE.EquirectangularReflectionMapping;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      scene.background = tex;
+    });
   scene.backgroundRotation.y = SKY_ROTATION;
 
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -73,6 +75,8 @@ export function setupEnvironment(scene: THREE.Scene, renderer: THREE.WebGLRender
     scene.environmentIntensity = THREE.MathUtils.lerp(0.5, THREE.MathUtils.lerp(0.08, 0.45, indoor), night);
   };
   return {
+    /** Gắn ảnh trời (gọi sau khi tải gói ban đầu); xong khi đã gắn. */
+    loadSky,
     /** Người chơi đang trong nhà (1) hay ngoài khuôn viên (0); gọi mỗi khung, tự làm mượt. */
     setIndoor(target: boolean, dt: number) {
       indoor += ((target ? 1 : 0) - indoor) * Math.min(1, dt * 3);
