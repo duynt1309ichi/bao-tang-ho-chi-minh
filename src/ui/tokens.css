@@ -1,0 +1,36 @@
+/* Design token — nguồn: docs/design/design.md mục 2 */
+:root {
+  --zone-a: #7a1f2b;
+  --zone-b: #1f3a6b;
+  --zone-c: #a87a2a;
+  --zone-review: #3e5c4a;
+  --surface: rgba(18, 20, 26, 0.9);
+  --surface-2: rgba(32, 35, 44, 0.92);
+  --scrim: rgba(0, 0, 0, 0.45);
+  --ink: #f3eee4;
+  --ink-muted: #b9b2a6;
+  --accent: #d9b26a;
+  --accent-ink: #1a1712;
+  --success: #5bbf86;
+  --danger: #e5736b;
+  --hint: #f0a04b;
+  --font: "Be Vietnam Pro", system-ui, sans-serif;
+  --fs-xs: 14px;
+  --fs-sm: 15px;
+  --fs-md: 16px;
+  --fs-lg: 18px;
+  --fs-xl: 22px;
+  --fs-2xl: 28px;
+  --fs-3xl: 40px;
+  --radius-sm: 6px;
+  --radius-lg: 14px;
+  --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --border: 1px solid rgba(243, 238, 228, 0.14);
+  --t-fast: 120ms;
+  --t-base: 220ms;
+  --hit: 44px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --t-fast: 0ms; --t-base: 0ms; }
+}

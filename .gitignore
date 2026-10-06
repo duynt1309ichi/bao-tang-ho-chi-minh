@@ -1,2 +1,8 @@
 # Bo kit quy trinh + tai lieu da ky: giu tren may, khong day len git
 AI-Skill/
+node_modules/
+dist/
+# File goc truoc khi nen (texture, GLB tho) — chi giu tren may
+assets-src/
+# Khong dua giao trinh (PDF/scan) len repo — NFR-11
+*.pdf

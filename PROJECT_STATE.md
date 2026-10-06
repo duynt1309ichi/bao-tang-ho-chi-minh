@@ -8,7 +8,7 @@
 - **Loại dự án:** Mới (Track A)
 - **Kiểu bố trí tài liệu:** A — monolith, tài liệu đi chung repo code (`docs/{ba,sa,design,qa,security}`)
 - **Giai đoạn hiện tại:** B3 — FSD + LLD + design + scaffold
-- **Cổng đang chờ:** GATE-3
+- **Cổng đang chờ:** GATE-3 (đủ hồ sơ: FSD, LLD, design, scaffold; api-spec không áp dụng)
 - **GATE-3 (đóng băng thiết kế):** BẬT
 - **GATE-4 (nghiệm thu chức năng):** BẬT
 
@@ -24,12 +24,12 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 | techstack.md      | SA          | APPROVED     | 2026-10-06             |
 | HLD.md            | SA          | APPROVED     | 2026-10-06             |
 | architecture.html | SA          | APPROVED     | 2026-10-06             |
-| FSD.md            | BA          | NOT_STARTED  |                        |
-| LLD.md            | SA          | NOT_STARTED  |                        |
+| FSD.md            | BA          | DONE         | 2026-10-06             |
+| LLD.md            | SA          | DONE         | 2026-10-06             |
 | api-spec.md       | SA          | —            | không áp dụng — không có backend (anh Duy chọn quy trình rút gọn 2026-10-06) |
-| design.md         | Designer    | NOT_STARTED  |                        |
+| design.md         | Designer    | DONE         | 2026-10-06             |
 | scaffold-backend  | Backend     | —            | không áp dụng (quy trình rút gọn) |
-| scaffold-frontend | Frontend    | NOT_STARTED  |                        |
+| scaffold-frontend | Frontend    | DONE         | 2026-10-06             |
 | scaffold-mobile   | Mobile      | —            | không áp dụng — web responsive thay app native |
 | src (code)        | Frontend    | NOT_STARTED  |                        |
 | test-plan.md      | Tester      | NOT_STARTED  |                        |
@@ -70,3 +70,4 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 - 2026-10-06 — BA viết `docs/ba/SRS.md` v0.1 (27 FR, 14 NFR, 4 điểm chờ xác nhận ở mục 8) + `docs/ba/function-map.html` → DONE. SA bắt đầu brainstorm kiến trúc.
 - 2026-10-06 — anh Duy xác nhận 4 điểm SRS mục 8, chọn phương án kiến trúc A (Three.js thuần) và toàn bộ bảng version. SA viết `docs/sa/techstack.md`, `HLD.md`, `architecture.html` → DONE. PO trình GATE-2.
 - 2026-10-06 — anh Duy duyệt GATE-2. Sang B3: FSD, LLD, design, scaffold-frontend.
+- 2026-10-06 — B3: designer viết `docs/design/design.md`; BA viết `docs/ba/FSD.md` (15 màn SCR, 19 thông báo MSG, ma trận 27/27 FR); SA viết `docs/sa/LLD.md`; frontend dựng khung Vite 8.3 + TS 6.0 + three 0.186 + Vitest 5 + `vercel.json` (CSP) — build OK, chạy dev OK. Chưa deploy Vercel (chốt cách kết nối ở B6 theo HLD). PO trình GATE-3.
