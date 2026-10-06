@@ -7,7 +7,7 @@
 - **Ngày khởi tạo:** 2026-10-06
 - **Loại dự án:** Mới (Track A)
 - **Kiểu bố trí tài liệu:** A — monolith, tài liệu đi chung repo code (`docs/{ba,sa,design,qa,security}`)
-- **Giai đoạn hiện tại:** B4 — Phát triển (mốc M1: blockout, nhân vật, camera, va chạm)
+- **Giai đoạn hiện tại:** B4 — Phát triển (mốc M2: hiện vật, bảng thông tin, tiến độ, lưu, trắc nghiệm)
 - **Cổng đang chờ:** GATE-4
 - **GATE-3 (đóng băng thiết kế):** BẬT
 - **GATE-4 (nghiệm thu chức năng):** BẬT
@@ -73,3 +73,5 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 - 2026-10-06 — B3: designer viết `docs/design/design.md`; BA viết `docs/ba/FSD.md` (15 màn SCR, 19 thông báo MSG, ma trận 27/27 FR); SA viết `docs/sa/LLD.md`; frontend dựng khung Vite 8.3 + TS 6.0 + three 0.186 + Vitest 5 + `vercel.json` (CSP) — build OK, chạy dev OK. Chưa deploy Vercel (chốt cách kết nối ở B6 theo HLD). PO trình GATE-3.
 - 2026-10-06 — anh Duy duyệt GATE-3. Sang B4, mốc M1 trên nhánh `feature/m1-blockout`. Kết nối Vercel giữ ở B6 (anh chưa yêu cầu làm sớm).
 - 2026-10-06 — M1 (nhánh `feature/m1-blockout`): `layout.json` (63 vị trí hiện vật, 10 trạm), bảo tàng khối hộp sinh từ layout, nhân vật tạm, camera thứ 3/thứ nhất chống xuyên tường + không xuống dưới sàn, va chạm three-mesh-bvh, nhãn khu vực. 18 unit test xanh; thử trên trình duyệt: đi 5 s = 10,01 m, chạy hết trục bảo tàng không kẹt, không xuyên tường, camera không xuyên tường ở 30 lần thử. Còn lại của M1: điều khiển cảm ứng dời sang M5 theo lộ trình.
+- 2026-10-06 — M2 (nhánh `feature/m2-exhibits`, cắt từ M1): `content/exhibits.ts` (63 hiện vật, 13 🎛, tóm tắt + trích dẫn + trang), `content/quiz.ts` (38 câu, 3–5 câu/phòng — **chờ anh Duy rà trước GATE-4**), `content/validate.ts` (luật FR-26, chạy trong `npm run build`), `storage/` (Progress `bttr.progress.v1`, validate FR-19, `mergeQuiz`), `exhibits/proximity` (BR-S09), bảng hiện vật SCR-07 (camera bay tới viewpoint), trắc nghiệm SCR-10 (xáo phương án, gợi ý xem lại, hỏi trước khi thoát), màn hoàn thành SCR-11, HUD N/63, toast MSG-06/10/11. 35 unit test xanh; thử trên trình duyệt: mở/đóng hiện vật → 1/63 + toast, tải lại giữ tiến độ, P05 4/4 → ★ rồi làm lại 2/4 vẫn ★, thoát giữa bài không lưu, hiện vật thứ 63 → màn hoàn thành đúng 1 lần, tiến độ `abc` → 0/63 + MSG-10, bố cục điện thoại 375 px. Chưa làm trong M2 (theo lộ trình): thao tác 🎛 (M4), xoay mô hình 🧊 (M3/M4), ảnh chân dung + credits (M5), ◎ gợi ý trên bản đồ (M4 cùng minimap).
+- 2026-10-06 — anh Duy giao Claude tự quyết 3 điểm sau M2: (1) Claude tự rà 38 câu trắc nghiệm theo nội dung hiện vật + NOI_DUNG.md (đáp án, phương án nhiễu, giải thích) — không thấy sai; sửa thân hiện vật `a1-dinh-nghia` để không lặp nguyên văn định nghĩa đã có ở phần trích dẫn. Việc anh Duy rà nội dung vẫn giữ trong DoD GATE-4 (SRS FR-16). (2) Giữ cấu hình `dev-5174` trong `.claude/launch.json` cho phiên song song. (3) Commit và đẩy nhánh `feature/m2-exhibits`.

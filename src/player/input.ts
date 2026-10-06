@@ -19,9 +19,13 @@ export class DesktopInput {
   look = { dx: 0, dy: 0 };
   zoom = 0;
   onToggleView = () => {};
+  onInteract = () => {};
+  private on = true;
 
   constructor(private canvas: HTMLCanvasElement) {
     addEventListener('keydown', (e) => {
+      if (!this.on) return; // đang mở bảng: để phím mũi tên, Space… cho giao diện
+      if (e.code === 'KeyE' && !e.repeat) this.onInteract();
       if (MOVE_KEYS.has(e.code)) {
         this.keys.add(e.code);
         e.preventDefault();
@@ -38,7 +42,7 @@ export class DesktopInput {
     });
     // Có pointer lock: di chuột là xoay. Không có (bị từ chối): giữ chuột trái và kéo (FR-05 1b).
     addEventListener('mousemove', (e) => {
-      if (document.pointerLockElement === canvas || (e.buttons & 1 && e.target === canvas)) {
+      if (this.on && (document.pointerLockElement === canvas || (e.buttons & 1 && e.target === canvas))) {
         this.look.dx += e.movementX;
         this.look.dy += e.movementY;
       }
@@ -47,6 +51,15 @@ export class DesktopInput {
       this.zoom += Math.sign(e.deltaY);
       e.preventDefault();
     }, { passive: false });
+  }
+
+  /** Tắt khi mở lớp giao diện: thả hết phím, bỏ xoay/zoom đang gom. */
+  set enabled(v: boolean) {
+    this.on = v;
+    if (!v) {
+      this.keys.clear();
+      this.consume();
+    }
   }
 
   get move() {

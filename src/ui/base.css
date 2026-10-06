@@ -1,30 +1,108 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; overflow: hidden; background: #0d0e12; }
 body { font-family: var(--font); font-size: var(--fs-md); line-height: 1.55; color: var(--ink); }
-#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; outline: none; }
 #ui { position: fixed; inset: 0; pointer-events: none; }
 #ui > * { pointer-events: auto; }
-.panel {
-  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-  max-width: min(560px, calc(100% - 32px)); padding: 24px 32px;
-  background: var(--surface); border: var(--border); border-radius: var(--radius-lg);
-  box-shadow: var(--shadow); text-align: center;
-}
-.kicker { font-size: var(--fs-xs); letter-spacing: 0.14em; color: var(--ink-muted); margin: 0 0 8px; }
-h1 { font-size: var(--fs-2xl); line-height: 1.25; margin: 0 0 12px; }
-.hud-area {
-  position: absolute; top: 16px; left: 16px; max-width: calc(100% - 32px);
-  padding: 8px 12px; background: var(--surface); border: var(--border); border-radius: var(--radius-sm);
-  font-size: var(--fs-xs); font-weight: 600;
-}
-.hud-hint {
-  position: absolute; bottom: 24px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 32px);
-  padding: 8px 16px; background: var(--surface); border-radius: var(--radius-sm); font-size: var(--fs-xs); text-align: center;
-}
-.toast {
-  position: absolute; top: 72px; left: 50%; transform: translateX(-50%);
-  padding: 8px 16px; background: var(--surface); border: var(--border); border-radius: var(--radius-sm);
-  opacity: 0; transition: opacity var(--t-base); pointer-events: none;
-}
-.toast.show { opacity: 1; }
 [hidden] { display: none !important; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+h1, h2 { line-height: 1.25; margin: 0 0 12px; }
+h1 { font-size: var(--fs-2xl); }
+h2 { font-size: var(--fs-xl); }
+p { margin: 0 0 12px; }
+.kicker { font-size: var(--fs-xs); letter-spacing: 0.14em; color: var(--ink-muted); margin: 0; }
+.muted { color: var(--ink-muted); }
+.small { font-size: var(--fs-xs); }
+.success { color: var(--success); font-weight: 600; }
+.danger { color: var(--danger); font-weight: 600; }
+
+/* Nút (design.md mục 5) */
+.btn {
+  min-height: var(--hit); padding: 0 16px; border-radius: var(--radius-sm); border: var(--border);
+  background: transparent; color: var(--ink); font: inherit; font-weight: 600; cursor: pointer;
+  transition: background var(--t-fast) ease-out, transform var(--t-fast) ease-out;
+}
+.btn:hover { background: var(--surface-2); }
+.btn:active { transform: scale(0.98); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { background: var(--surface-2); color: var(--ink-muted); cursor: not-allowed; filter: none; transform: none; }
+.icon-btn {
+  width: var(--hit); height: var(--hit); flex: none; border-radius: var(--radius-sm); border: var(--border);
+  background: var(--surface); color: var(--ink); font: inherit; cursor: pointer;
+}
+.icon-btn:hover { border-color: var(--accent); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; align-items: center; margin-top: 16px; }
+.actions > p { margin: 0 auto 0 0; }
+
+/* Lớp giao diện và bảng */
+.overlay { position: absolute; inset: 0; }
+.overlay.scrim { background: var(--scrim); }
+.panel {
+  background: var(--surface); border: var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow);
+  padding: 24px; animation: panel-in var(--t-base) ease-out;
+}
+.panel-center {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: min(600px, calc(100% - 32px)); max-height: calc(100% - 32px); overflow-y: auto;
+}
+.panel-side {
+  position: absolute; top: 16px; right: 16px; bottom: 16px; width: min(480px, calc(100% - 32px));
+  display: flex; flex-direction: column;
+}
+.panel-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.panel-head > :first-child { flex: 1; margin: 0; }
+.panel-scroll { flex: 1; overflow-y: auto; margin: 12px -8px 0; padding: 0 8px; border-top: var(--border); padding-top: 12px; }
+.badge { align-self: flex-start; font-size: var(--fs-xs); color: var(--hint); border: 1px solid currentColor; border-radius: var(--radius-sm); padding: 0 8px; }
+blockquote { margin: 0 0 12px; padding-left: 12px; border-left: 3px solid var(--accent); font-style: italic; }
+blockquote footer { font-style: normal; color: var(--ink-muted); font-size: var(--fs-sm); }
+.note { color: var(--ink-muted); font-size: var(--fs-sm); }
+.source { margin: 12px 0 0; padding-top: 12px; border-top: var(--border); color: var(--ink-muted); font-size: var(--fs-xs); }
+@keyframes panel-in { from { opacity: 0; } }
+
+/* Trắc nghiệm (SCR-10) */
+.quiz .prompt { font-size: var(--fs-lg); font-weight: 600; }
+.options { display: grid; gap: 8px; }
+.option {
+  display: flex; align-items: center; gap: 12px; min-height: var(--hit); padding: 8px 12px;
+  background: var(--surface-2); border: 2px solid transparent; border-radius: var(--radius-sm); cursor: pointer;
+}
+.option:hover { border-color: var(--accent); }
+.option:not(.correct, .wrong):has(input:checked) { border-color: var(--accent); }
+.option:has(input:focus-visible) { outline: 2px solid var(--ink); outline-offset: 2px; }
+.option:has(input:disabled) { cursor: default; }
+.option.correct { background: color-mix(in srgb, var(--success) 25%, transparent); border-color: var(--success); }
+.option.wrong { background: color-mix(in srgb, var(--danger) 25%, transparent); border-color: var(--danger); }
+.letter { flex: none; width: 28px; height: 28px; display: grid; place-items: center; border-radius: 50%; border: var(--border); font-weight: 600; }
+.mark { margin-left: auto; font-weight: 700; }
+.feedback:not(:empty) { margin-top: 16px; }
+.review { list-style: none; margin: 0; padding: 0; }
+.hint { color: var(--hint); }
+.score { font-size: var(--fs-2xl); font-weight: 700; }
+
+/* HUD (SCR-05) */
+.hud { position: absolute; top: 16px; left: 16px; max-width: calc(100% - 32px); display: grid; gap: 8px; justify-items: start; pointer-events: none; }
+.hud-area, .hud-progress { padding: 8px 12px; background: var(--surface); border: var(--border); border-radius: var(--radius-sm); font-size: var(--fs-xs); font-weight: 600; }
+.hud-progress { display: flex; align-items: center; gap: 8px; }
+progress { appearance: none; width: 140px; height: 6px; border: 0; border-radius: 3px; background: var(--surface-2); }
+progress::-webkit-progress-bar { background: var(--surface-2); border-radius: 3px; }
+progress::-webkit-progress-value { background: var(--accent); border-radius: 3px; }
+progress::-moz-progress-bar { background: var(--accent); border-radius: 3px; }
+.hud-bottom {
+  position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); width: max-content; max-width: calc(100% - 32px);
+  display: grid; gap: 8px; justify-items: center; pointer-events: none;
+}
+.hud-hint, .hud-prompt { padding: 8px 16px; background: var(--surface); border-radius: var(--radius-sm); font-size: var(--fs-xs); text-align: center; }
+.hud-prompt { font-size: var(--fs-sm); font-weight: 600; }
+kbd { display: inline-block; margin-right: 8px; padding: 0 6px; border: 1px solid var(--accent); border-radius: 4px; font: inherit; }
+.toasts { position: absolute; top: 72px; left: 50%; transform: translateX(-50%); display: grid; gap: 8px; justify-items: center; pointer-events: none; }
+.toast { padding: 8px 16px; background: var(--surface); border: var(--border); border-radius: var(--radius-sm); animation: panel-in var(--t-base) ease-out; }
+.toast.warn { border-color: var(--hint); }
+
+/* Điện thoại: bảng hiện vật chiếm 60% dưới (FSD SCR-07) */
+@media (max-width: 767px) {
+  .panel { padding: 16px; }
+  .panel-side { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; height: 60%; }
+}

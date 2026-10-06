@@ -13,6 +13,35 @@ export interface Room {
   pages: PageRange;
 }
 
+export type ExhibitKind = 'portrait' | 'text' | 'model' | 'interactive';
+
+export interface Exhibit {
+  /** Khớp `^[a-c]\d{1,2}-[a-z0-9-]+$`, lấy nguyên từ NOI_DUNG.md. */
+  id: string;
+  room: RoomId;
+  kind: ExhibitKind;
+  title: string;
+  /** Tóm tắt bằng lời của mình; đoạn cách nhau bằng `\n\n`. */
+  body: string;
+  quote?: { text: string; author: string };
+  pages: PageRange[];
+  /** Ví dụ không có trong sách → nhãn "(minh họa)". */
+  illustrative?: boolean;
+  interactive?: { hint: string };
+}
+
+export interface QuizQuestion {
+  /** `${RoomId}-q${n}` */
+  id: string;
+  room: RoomId;
+  prompt: string;
+  options: [string, string, string, string];
+  /** Chỉ số đáp án đúng trong `options` gốc (trước khi xáo). */
+  answer: 0 | 1 | 2 | 3;
+  explanation: string;
+  exhibitIds: string[];
+}
+
 export interface Door {
   to: AreaId;
   center: [x: number, z: number];

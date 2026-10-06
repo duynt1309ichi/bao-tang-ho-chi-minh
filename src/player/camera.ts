@@ -17,6 +17,34 @@ export function orbitDir(yaw: number, pitch: number, target = new THREE.Vector3(
   return target.set(Math.cos(pitch) * Math.sin(yaw), Math.sin(pitch), Math.cos(pitch) * Math.cos(yaw));
 }
 
+/**
+ * Bay mượt từ tư thế camera lúc `start()` tới tư thế đích của từng khung hình (FR-13 bước 1 và 4).
+ * Mỗi khung: đặt camera vào tư thế đích trước, rồi gọi `apply()` để trộn từ tư thế xuất phát.
+ */
+export class CameraFly {
+  private fromPos = new THREE.Vector3();
+  private fromQ = new THREE.Quaternion();
+  private toQ = new THREE.Quaternion();
+  private t = 1;
+  private duration = 0;
+
+  start(camera: THREE.Camera, duration: number) {
+    this.fromPos.copy(camera.position);
+    this.fromQ.copy(camera.quaternion);
+    this.duration = duration;
+    this.t = duration > 0 ? 0 : 1;
+  }
+
+  apply(camera: THREE.Camera, dt: number) {
+    if (this.t >= 1) return;
+    this.t = Math.min(1, this.t + dt / this.duration);
+    const k = 1 - (1 - this.t) ** 3; // ease-out
+    camera.position.lerpVectors(this.fromPos, camera.position, k);
+    this.toQ.copy(camera.quaternion);
+    camera.quaternion.slerpQuaternions(this.fromQ, this.toQ, k);
+  }
+}
+
 const pivot = new THREE.Vector3();
 const dir = new THREE.Vector3();
 const ray = new THREE.Ray();
