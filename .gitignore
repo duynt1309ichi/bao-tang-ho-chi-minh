@@ -6,3 +6,6 @@ dist/
 assets-src/
 # Khong dua giao trinh (PDF/scan) len repo — NFR-11
 *.pdf
+
+.vercel
+.env*

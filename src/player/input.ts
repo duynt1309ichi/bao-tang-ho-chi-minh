@@ -39,10 +39,16 @@ export class DesktopInput {
 
     canvas.addEventListener('click', (e) => {
       if ((e as PointerEvent).pointerType === 'touch') return; // cảm ứng xoay bằng kéo ngón (player/touch.ts)
-      if (document.pointerLockElement !== canvas) canvas.requestPointerLock?.()?.catch?.(() => {});
+      if (document.pointerLockElement === canvas) return;
+      // unadjustedMovement: lấy số đo thô, tránh lỗi Chrome/Windows thỉnh thoảng trả movementX vọt lên hàng trăm px.
+      // Trình duyệt không hỗ trợ thì từ chối → xin khóa thường.
+      const lock = (o?: PointerLockOptions) => canvas.requestPointerLock?.(o) as Promise<void> | undefined;
+      lock({ unadjustedMovement: true })?.catch?.(() => lock()?.catch?.(() => {}));
     });
     // Có pointer lock: di chuột là xoay. Không có (bị từ chối): giữ chuột trái và kéo (FR-05 1b).
     addEventListener('mousemove', (e) => {
+      // ponytail: bỏ sự kiện vọt bất thường (lỗi trình duyệt), ngưỡng 300 px/sự kiện — hạ xuống nếu vẫn còn giật.
+      if (Math.abs(e.movementX) > 300 || Math.abs(e.movementY) > 300) return;
       if (this.on && (document.pointerLockElement === canvas || (e.buttons & 1 && e.target === canvas))) {
         this.look.dx += e.movementX;
         this.look.dy += e.movementY;
