@@ -1,24 +1,34 @@
 import * as THREE from 'three';
 import { MeshBVH } from 'three-mesh-bvh';
+import '@fontsource/be-vietnam-pro/400.css';
+import '@fontsource/be-vietnam-pro/400-italic.css';
+import '@fontsource/be-vietnam-pro/600.css';
+import '@fontsource/be-vietnam-pro/700.css';
 import './ui/tokens.css';
 import './ui/base.css';
 import { exhibit, exhibits, quiz, roomNo, rooms } from './content';
 import type { AreaId, RoomId } from './content/types';
+import { Graphics } from './core/graphics';
 import { stepsFor } from './core/loop';
+import { FpsMonitor, lower, PRESETS, QUALITY_LABEL, type Quality } from './core/quality';
 import { pickTarget } from './exhibits/proximity';
 import { CameraFly, FollowCamera } from './player/camera';
 import { DesktopInput } from './player/input';
 import { Player } from './player/player';
 import { kv } from './storage/kv';
 import { ProgressStore } from './storage/progress';
+import { SettingsStore } from './storage/settings';
 import { showCompletion } from './ui/completion';
 import { createToasts, h, overlayOpen, reducedMotion } from './ui/dom';
 import { showExhibitPanel } from './ui/exhibitPanel';
+import { showPauseMenu } from './ui/pauseMenu';
 import { showQuizPanel } from './ui/quizPanel';
 import { buildBlockout } from './world/blockout';
+import { setupEnvironment } from './world/environment';
+import { repaint } from './world/textures';
 import { areaAt, areaName, layout } from './world/layout';
 
-// Mốc M2: hiện vật, bảng thông tin, tiến độ + lưu, trắc nghiệm trên nền blockout M1.
+// Mốc M3: blockout có vật liệu, pano chữ, bầu trời + IBL, hậu kỳ và mức chất lượng (FR-22).
 const canvas = document.querySelector<HTMLCanvasElement>('#scene')!;
 const ui = document.querySelector<HTMLDivElement>('#ui')!;
 
@@ -36,26 +46,28 @@ if (!document.createElement('canvas').getContext('webgl2')) {
 type Target = { id: string; x: number; z: number; room?: RoomId };
 
 function start() {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.5));
   canvas.tabIndex = -1;
+  const isTouch = matchMedia('(pointer: coarse)').matches;
+  const settings = SettingsStore.load(isTouch);
 
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#a9c4d8');
-  scene.fog = new THREE.Fog('#a9c4d8', 40, 120);
-  scene.add(new THREE.HemisphereLight('#f3eee4', '#5a5040', 1.6));
-  const sun = new THREE.DirectionalLight('#fff4e0', 1.6);
-  sun.position.set(-20, 40, 15);
-  scene.add(sun);
-
-  const { group, collider } = buildBlockout(layout);
+  const camera = new THREE.PerspectiveCamera(60, 1, 0.05, 200);
+  const shadowLight = new THREE.DirectionalLight();
+  const gfx = new Graphics(canvas, scene, camera, shadowLight);
+  const env = setupEnvironment(scene, gfx.renderer, shadowLight);
+  const { group, collider, textures } = buildBlockout(layout, PRESETS[settings.value.quality].texture);
   scene.add(group);
+  const applyQuality = (q: Quality) => {
+    gfx.apply(q);
+    for (const [name, tex] of textures) repaint(tex, name, PRESETS[q].texture);
+  };
+  applyQuality(settings.value.quality);
   const bvh = new MeshBVH(collider);
 
-  const camera = new THREE.PerspectiveCamera(60, 1, 0.05, 200);
   const follow = new FollowCamera(camera);
   const fly = new CameraFly();
   const player = new Player();
+  player.object.traverse((o) => (o.castShadow = true));
   scene.add(player.object);
   player.teleport(layout.spawns.courtyard);
   follow.yaw = player.object.rotation.y + Math.PI; // camera ở sau lưng
@@ -75,7 +87,8 @@ function start() {
   const hud = h('div', { class: 'hud' }, areaLabel, h('div', { class: 'hud-progress' }, bar, count));
   const prompt = h('div', { class: 'hud-prompt', hidden: '' });
   const hint = h('div', { class: 'hud-hint' }, 'Bấm vào màn hình để điều khiển camera · WASD: đi · Shift: chạy · E: xem · Cuộn: zoom · V: đổi góc nhìn');
-  ui.replaceChildren(hud, h('div', { class: 'hud-bottom' }, prompt, hint));
+  const menuBtn = h('button', { class: 'icon-btn hud-menu', 'aria-label': 'Menu' }, '☰');
+  ui.replaceChildren(hud, menuBtn, h('div', { class: 'hud-bottom' }, prompt, hint));
   const toast = createToasts(ui);
 
   let warnedStorage = false;
@@ -144,14 +157,54 @@ function start() {
     input.enabled = !overlayOpen();
   }
 
+  // SCR-12: nút ☰, hoặc ESC (trình duyệt nhả pointer lock trước rồi mới tới đây).
+  const openMenu = () => {
+    if (overlayOpen()) return;
+    input.enabled = false;
+    showPauseMenu(ui, {
+      quality: () => settings.value.quality,
+      setQuality: (q) => {
+        settings.update({ quality: q, qualityManual: true });
+        applyQuality(q);
+      },
+      toLobby: () => {
+        player.teleport(layout.spawns.lobby);
+        toast('Đã đưa bạn về sảnh.');
+      },
+      onClose: resume,
+    });
+  };
+  menuBtn.addEventListener('click', openMenu);
+  document.addEventListener('pointerlockchange', () => {
+    if (document.pointerLockElement !== canvas) openMenu();
+  });
+  addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !e.defaultPrevented && !overlayOpen()) openMenu(); // ESC vừa đóng một lớp thì thôi
+  });
+
+  // Tự hạ chất lượng một lần mỗi phiên khi FPS < 25 trong 5 s chơi liên tục (BR-S12, MSG-09).
+  const fps = new FpsMonitor();
+  let downgraded = false;
+  const watchFps = (elapsed: number, playing: boolean) => {
+    if (downgraded || settings.value.qualityManual) return;
+    if (!playing || elapsed > 0.5) return fps.reset(); // mở bảng, tab vừa hiện lại: bắt đầu đếm lại
+    if (!fps.push(elapsed)) return;
+    downgraded = true;
+    const next = lower(settings.value.quality);
+    if (!next) return;
+    settings.update({ quality: next });
+    applyQuality(next);
+    toast(`Đã giảm chất lượng đồ họa xuống ${QUALITY_LABEL[next]} để chạy mượt hơn.`, 'warn');
+  };
+
   // Móc kiểm thử tay trong dev (không có trong bản build).
-  if (import.meta.env.DEV) Object.assign(window, { __museum: { player, follow, bvh, progress } });
+  if (import.meta.env.DEV) Object.assign(window, { __museum: { player, follow, bvh, progress, gfx, settings, fps } });
 
   let area: AreaId | null = null;
   const forward = new THREE.Vector3();
 
   const resize = () => {
-    renderer.setSize(innerWidth, innerHeight, false);
+    gfx.resize();
     camera.aspect = innerWidth / innerHeight;
     camera.updateProjectionMatrix();
   };
@@ -159,13 +212,13 @@ function start() {
   resize();
 
   let last = performance.now();
-  renderer.setAnimationLoop((now) => {
+  gfx.renderer.setAnimationLoop((now) => {
     const playing = !overlayOpen();
     const { dx, dy, zoom } = input.consume();
     follow.rotate(dx, dy);
     follow.zoomBy(zoom);
     hint.hidden = input.locked || !playing;
-    hud.hidden = !playing;
+    hud.hidden = menuBtn.hidden = !playing;
 
     const elapsed = (now - last) / 1000;
     for (const dt of stepsFor(elapsed)) {
@@ -211,6 +264,8 @@ function start() {
       area = here;
       areaLabel.textContent = areaName(here);
     }
-    renderer.render(scene, camera);
+    env.follow(player.feet);
+    watchFps(elapsed, playing);
+    gfx.render();
   });
 }

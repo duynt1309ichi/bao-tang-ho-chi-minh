@@ -101,6 +101,18 @@ kbd { display: inline-block; margin-right: 8px; padding: 0 6px; border: 1px soli
 .toast { padding: 8px 16px; background: var(--surface); border: var(--border); border-radius: var(--radius-sm); animation: panel-in var(--t-base) ease-out; }
 .toast.warn { border-color: var(--hint); }
 
+/* Menu tạm dừng, cài đặt (SCR-12, SCR-13) */
+.menu { width: min(360px, calc(100% - 32px)); display: grid; gap: 8px; }
+.menu h2 { text-align: center; }
+.setting { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.segmented { display: inline-flex; gap: 4px; padding: 4px; background: var(--surface-2); border-radius: 999px; }
+.segmented label { position: relative; }
+.segmented input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.segmented span { display: grid; place-items: center; min-height: var(--hit); min-width: var(--hit); padding: 0 14px; border-radius: 999px; font-weight: 600; font-size: var(--fs-sm); }
+.segmented input:checked + span { background: var(--accent); color: var(--accent-ink); }
+.segmented input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
+.hud-menu { position: absolute; top: 16px; right: 16px; }
+
 /* Điện thoại: bảng hiện vật chiếm 60% dưới (FSD SCR-07) */
 @media (max-width: 767px) {
   .panel { padding: 16px; }
