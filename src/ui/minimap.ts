@@ -131,7 +131,7 @@ export function createMinimap(layout: Layout, progress: ProgressStore, hints: Re
       const dialog = h('section', { class: 'panel panel-center wide', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'map-title' }, h('header', { class: 'panel-head' }, h('h2', { id: 'map-title' }, 'Bản đồ'), closeBtn), big, legend);
       const close = openOverlay(document.querySelector('#ui')!, dialog, {
         onEsc: () => done(),
-        onKey: (e) => e.code === 'KeyM' && done(),
+        onKey: (e) => e.code === 'KeyM' && (e.preventDefault(), done()),
         focus: closeBtn,
       });
       const done = () => {

@@ -161,7 +161,7 @@ Trường settings sai kiểu → dùng mặc định **riêng trường đó** 
 | `player/controller.ts` | Ghép input + collision + animation; tốc độ BR-S02 | `controller.update(dt)`, `teleport(spawn)`, `pushBack(m)` | các module player, world | FR-04, FR-07 |
 | `exhibits/proximity.ts` | Chọn mục tiêu BR-S09 **(thuần)** | `pickTarget(pos, facing, candidates, maxDist = 2, maxAngleDeg = 60): ExhibitId \| null` | — | FR-12 |
 | `exhibits/registry.ts` | Đặt hiện vật vào scene theo layout, viền sáng | `place(zone)`, `highlight(id \| null)`, `interact()` | three, content | FR-12 |
-| `exhibits/viewer.ts` | Camera bay, bảng SCR-07, xoay 🧊 | `open(id)`, `close()`, `rotate(dx, dy)`, `clampModelPitch(p)` **(thuần)** | ui, storage | FR-13 |
+| `exhibits/viewer.ts` | Xoay mô hình 🧊 trên bục khi đang xem (camera bay và bảng SCR-07 nằm ở `main.ts` + `ui/exhibitPanel`) | `modelRotator(mesh)` → `rotate(dx, dy)`, `reset()`; `clampModelPitch(p)` **(thuần)**. Mesh lấy từ `world/blockout` `models` (mỗi 🧊 một mesh riêng) | three | FR-13 |
 | `exhibits/interactive/base.ts` | Khuôn chung 🎛 | `interface Interactive { start(): void; update(dt: number): void; isComplete(): boolean; reset(): void; dispose(): void }`; `runInteractive(id)` lo trạng thái Sẵn sàng → Đang thao tác → Hoàn thành | — | FR-14 |
 | `exhibits/interactive/<id>.ts` × 13 | Thao tác + điều kiện hoàn thành theo bảng FR-14 | cài đặt `Interactive` | three, audio | FR-14 |
 | `quiz/session.ts` | Một lượt trắc nghiệm | `startSession(room, rng)`, `answer(i)`, `finish(): { correct; total; reviewIds }`; `shuffle(options, answer, rng)` **(thuần)**; `addHints(ids)`, `hints: Set<ExhibitId>` (bộ nhớ phiên) | content, storage | FR-16, FR-17 |

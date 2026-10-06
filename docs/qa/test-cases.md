@@ -1,6 +1,6 @@
 # Test Cases — Bảo tàng Triết học
 
-| Phiên bản | v1.0 | Ngày | 2026-10-06 | Trạng thái | DONE — đã chạy vòng 1 |
+| Phiên bản | v1.1 | Ngày | 2026-10-06 | Trạng thái | DONE — đã chạy vòng 2 |
 |-----------|------|------|------------|------------|------------------------|
 
 ## 1. Phạm vi và nguồn suy test case
@@ -72,13 +72,13 @@ Chạy trên bản `main` sau khi merge M5 (`9f0b780`), dev server cổng 5173, 
 | TC-FR08-01 | FR-08 AC | — | 1) Xem bản đồ phóng to; 2) đi dọc hành lang đọc biển | — | P01 → P10 xen kẽ hai bên, màu đúng khu, phòng ôn tập ở cuối | Đúng thứ tự và màu trên bản đồ; biển cửa: GATE-4 M3 | Pass | |
 | TC-FR08-02 | FR-08 BR-S06 | — | Đo P04 | `layout.json` | ≥ 1,5 lần phòng thường | 15 × 10 m so với 10 × 10 m | Pass | |
 | TC-FR08-03 | FR-08 BR-S07 | Ở sảnh | Xem pano chào, sơ đồ, bảng "Về giáo trình" | — | Có đủ 3 đối tượng, không tính là hiện vật | GATE-4 M3 | Pass | |
-| TC-FR09-01 | FR-09 AC | Phiên mới | 1) Đi từ hành lang (5, 0, 0) vào P01 | — | Dừng nhân vật, popup "Phòng 01 · Chương 1 — …", "Giáo trình tr.…", "k/n", "Quay lại" / "Đi vào phòng" | Không có popup; nhân vật đi thẳng vào, chỉ nhãn HUD đổi | Fail | Major (BUG-01) |
-| TC-FR09-02 | FR-09 1a | Đã vào P01 trong phiên | 1) Ra hành lang; 2) vào lại | — | Toast MSG-05 3 s | Không có toast | Fail | Major (BUG-01) |
-| TC-FR09-03 | FR-09 2a | Popup đang mở | 1) "Quay lại" hoặc ESC | — | Đóng, lùi 1 m | Không chạy được vì không có popup | Blocked | (BUG-01) |
-| TC-FR09-04 | FR-09 1b | — | 1) Vào phòng ôn tập | — | Popup "Phòng ôn tập" + dòng mô tả | Không có popup | Fail | Major (BUG-01) |
+| TC-FR09-01 | FR-09 AC | Phiên mới | 1) Đi từ hành lang (5, 0, 0) vào P01 | — | Dừng nhân vật, popup "Phòng 01 · Chương 1 — …", "Giáo trình tr.…", "k/n", "Quay lại" / "Đi vào phòng" | V1: không có popup (BUG-01). **V2:** dừng ở z = −2,01; popup "Phòng 03 · Chương 2", "Vật chất và ý thức", "Giáo trình tr.118–182", "Đã khám phá 1/8 hiện vật"; focus "Đi vào phòng →" | Pass | |
+| TC-FR09-02 | FR-09 1a | Đã vào P01 trong phiên | 1) Ra hành lang; 2) vào lại | — | Toast MSG-05 3 s | V1: không có toast (BUG-01). **V2:** không popup, toast "Phòng 03 — Vật chất và ý thức" | Pass | |
+| TC-FR09-03 | FR-09 2a | Popup đang mở | 1) "Quay lại" hoặc ESC | — | Đóng, lùi 1 m | **V2:** ESC → về hành lang (z = −1,01, lùi 1 m), popup đóng; đi vào lại thì popup hiện lại vì chưa bấm "Đi vào phòng" | Pass | |
+| TC-FR09-04 | FR-09 1b | — | 1) Vào phòng ôn tập | — | Popup "Phòng ôn tập" + dòng mô tả | V1: không có popup (BUG-01). **V2:** popup "Phòng ôn tập" + "Mỗi trạm là bài trắc nghiệm của một phòng.", vạch màu xanh | Pass | |
 | TC-FR10-01 | FR-10 AC | Đủ 7/7 hiện vật P01, P01 đúng 4/4 | 1) Bấm M | — | P01 có ✓ và ★ | P01 ✓ ★ | Pass | |
 | TC-FR10-02 | FR-10 + FR-17 | Sai câu gắn `b4-luong-chat` | 1) Mở bản đồ; 2) mở lại hiện vật; 3) mở bản đồ | — | P04 có ◎; mở lại hiện vật thì mất ◎ | ◎ ở P04, P05; mở lại thì gợi ý bị xóa | Pass | |
-| TC-FR10-03 | FR-10 BR-S08 (thu nhỏ bằng M) | Bản đồ phóng to đang mở | 1) Bấm M (phím thật) | — | Bản đồ thu nhỏ | Bản đồ đóng rồi mở lại ngay trong cùng một lần bấm, vẫn đang phóng to | Fail | Minor (BUG-03) |
+| TC-FR10-03 | FR-10 BR-S08 (thu nhỏ bằng M) | Bản đồ phóng to đang mở | 1) Bấm M (phím thật) | — | Bản đồ thu nhỏ | V1: đóng rồi mở lại ngay (BUG-03). **V2:** bấm M lần hai (phím thật) thì đóng, không còn lớp phủ | Pass | |
 | TC-FR10-04 | FR-10 BR-S08 | Bản đồ phóng to đang mở | 1) ESC | — | Thu nhỏ, không mở menu | Đúng | Pass | |
 | TC-FR11-01 | FR-11 AC | 4/63 | 1) Mở hiện vật thứ 5; 2) đóng | — | HUD "5/63" | "5/63" | Pass | |
 | TC-FR11-02 | FR-11 quy tắc | — | 1) Mở bảng / menu / trắc nghiệm | — | HUD ẩn | `hud.hidden = true` | Pass | |
@@ -94,7 +94,7 @@ Chạy trên bản `main` sau khi merge M5 (`9f0b780`), dev server cổng 5173, 
 | TC-FR12-04 | FR-12 a | Không có mục tiêu | 1) Bấm E | — | Không làm gì | Không mở lớp nào | Pass | |
 | TC-FR13-01 | FR-13 AC | 0/63 | 1) Mở `b3-dinh-nghia`; 2) đóng | — | Đúng tên, trích dẫn, "tr.128–134"; toast MSG-06; HUD 1/63 | Đúng; toast "Đã khám phá: Định nghĩa vật chất của Lênin (1/63)" | Pass | |
 | TC-FR13-02 | FR-13 AC | Đã mở `b3-dinh-nghia` | 1) Mở lại | — | HUD vẫn 1/63, không toast | Đúng | Pass | |
-| TC-FR13-03 | FR-13 AC 2a | Hiện vật 🧊 `b5-thuc-tien` | 1) Mở; 2) kéo chuột lên hết; 3) "Đặt lại góc" | — | Khung xoay mô hình, dừng ở +30°, có nút "Đặt lại góc" | Bảng chỉ có chữ: không có khung xoay, không có nút. Ảnh hưởng 23 hiện vật 🧊 | Fail | Major (BUG-02) |
+| TC-FR13-03 | FR-13 AC 2a | Hiện vật 🧊 `b5-thuc-tien` | 1) Mở; 2) kéo chuột lên hết; 3) "Đặt lại góc" | — | Khung xoay mô hình, dừng ở +30°, có nút "Đặt lại góc" | V1: không có khung xoay (BUG-02). **V2:** có "🧊 Kéo để xoay mô hình" + "Đặt lại góc"; kéo lên hết nghiêng đúng 30°, kéo xuống −30°; "Đặt lại góc" và đóng bảng đều về 0°; kéo trong bảng không xoay; 23/23 hiện vật 🧊 có mesh riêng | Pass | |
 | TC-FR13-04 | FR-13 bước 4 | Bảng đang mở | Đóng bằng ✕, ESC, E (lần lượt) | — | Đóng, mở lại điều khiển, không mở menu | Đúng cả 3 cách | Pass | |
 | TC-FR13-05 | FR-13 2c | — | 1) Mở `a2-mac` | — | Ảnh chân dung + nguồn ảnh, giấy phép | Ảnh 480 px, "Ảnh: John Jabez Edwin Mayall, 1875 · phạm vi công cộng · Wikimedia Commons" | Pass | |
 | TC-FR13-06 | FR-13 bước 2 (minh họa) | — | 1) Mở `b4-luong-chat` tới Hoàn thành | — | Nhãn "(minh họa)" | Có | Pass | |
@@ -134,7 +134,7 @@ Chạy trên bản `main` sau khi merge M5 (`9f0b780`), dev server cổng 5173, 
 | TC-FR19-03 | FR-19 1b | — | 1) `version: 2`; 2) tải lại | D-03 | Như TC-FR19-02 | Về người chơi mới | Pass | |
 | TC-FR19-04 | FR-19 1c | — | 1) `explored` có mã lạ và trùng; `quiz.P05.total = 9`; khóa `P99`; 2) tải lại | D-04, D-05 | Bỏ mã lạ, bỏ trùng, bỏ P05 và P99, giữ phần còn lại, không báo | `explored = [b3-dinh-nghia]`, chỉ còn `quiz.P01`, không toast | Pass | |
 | TC-FR19-05 | FR-19 AC 3a | `localStorage` ném lỗi ngay từ đầu | 1) Mở trang; 2) chơi | D-08 | Chơi bình thường, MSG-11 một lần | Vào màn mở đầu; MSG-11 một lần | Pass | |
-| TC-FR19-06 | FR-19 3b | `setItem` ném `QuotaExceededError` giữa phiên | 1) Bật/tắt ngày đêm (ghi cài đặt) | D-08 | MSG-11 một lần trong phiên | Không có thông báo. MSG-11 chỉ hiện khi tiến độ thay đổi, lỗi ghi cài đặt bị bỏ qua | Fail | Minor (BUG-05) |
+| TC-FR19-06 | FR-19 3b | `setItem` ném `QuotaExceededError` giữa phiên | 1) Bật/tắt ngày đêm (ghi cài đặt) | D-08 | MSG-11 một lần trong phiên | V1: không có thông báo (BUG-05). **V2:** MSG-11 một lần khi ghi cài đặt lỗi; unit test `storage/kv.test.ts` | Pass | |
 | TC-FR19-07 | FR-19 bảng validate cài đặt | — | Giá trị ngoài miền | D-07 | Về mặc định | Unit test `settings.test.ts` | Pass | |
 | TC-FR20-01 | FR-20 AC | 63/63, P01 ★, P05 ★ | 1) Menu → Xóa tiến độ → "Xóa" | — | 0/63, không còn ★, cài đặt giữ, về màn mở đầu như lần đầu | Khóa tiến độ bị xóa; "Bắt đầu tham quan"; `bttr.settings.v1` không đổi | Pass | |
 | TC-FR20-02 | FR-20 2a | Hộp MSG-18 đang mở | 1) "Hủy"; 2) mở lại, ESC | — | Đóng, không đổi | Cả hai: không đổi; focus mặc định "Hủy" | Pass | |
@@ -145,7 +145,7 @@ Chạy trên bản `main` sau khi merge M5 (`9f0b780`), dev server cổng 5173, 
 |-------|---------------|----------------|----------------|---------|-----------------|-----------------|:----------:|---------|
 | TC-FR21-01 | FR-21 | Đang chơi | 1) Bấm ☰ | — | Đủ mục: Tiếp tục, Cài đặt, Hướng dẫn, Về sảnh, Nguồn & giấy phép, (Xem màn hoàn thành), Xóa tiến độ | Đủ | Pass | |
 | TC-FR21-02 | FR-21 a | Đang mở bản đồ / bảng hiện vật | 1) ESC | — | Đóng lớp đó, không mở menu | Đúng | Pass | |
-| TC-FR21-03 | FR-21 AC b | Đang chơi, chưa khóa con trỏ (hoặc trên điện thoại) | 1) Ẩn tab; 2) hiện lại | `visibilitychange` | Đang ở menu tạm dừng, nhạc dừng | Không mở menu; Web Audio có tạm dừng khi ẩn. Trên máy tính đã khóa con trỏ thì menu có mở (nhờ `pointerlockchange`) | Fail | Minor (BUG-04) |
+| TC-FR21-03 | FR-21 AC b | Đang chơi, chưa khóa con trỏ (hoặc trên điện thoại) | 1) Ẩn tab; 2) hiện lại | `visibilitychange` | Đang ở menu tạm dừng, nhạc dừng | V1: không mở menu khi chưa khóa con trỏ (BUG-04). **V2:** ẩn rồi hiện tab → đang ở menu tạm dừng; nhạc dừng khi ẩn (Web Audio `suspend`) | Pass | |
 | TC-FR21-04 | FR-21 | Đang chơi | 1) ESC (phím thật); 2) ESC | — | Mở menu; ESC lần nữa đóng | Đúng | Pass | |
 | TC-FR22-01 | FR-22 AC | Độ nhạy 1,0 | 1) Đặt 2,0; 2) tải lại | — | Vẫn 2,0 | 2,0 | Pass | |
 | TC-FR22-02 | FR-22 AC BR-S12 | TB, `qualityManual = false` | 1) Giả lập ~18 FPS 15 s | Vòng lặp chiếm 45 ms mỗi khung | Xuống Thấp + MSG-09; không hạ thêm | Xuống Thấp, 1 toast, sau đó giữ Thấp | Pass | |
@@ -199,19 +199,19 @@ Chạy trên bản `main` sau khi merge M5 (`9f0b780`), dev server cổng 5173, 
 | FR-06 | 7 | Có (60%) | Có (nhấc ngón) | 1 Blocked (máy thật) |
 | FR-07 | 4 | — | Có (rơi khỏi bản đồ) | |
 | FR-08 | 3 | Có (diện tích P04) | — | |
-| FR-09 | 4 | — | Có (Quay lại) | 3 Fail, 1 Blocked |
-| FR-10 | 4 | — | — | 1 Fail |
+| FR-09 | 4 | — | Có (Quay lại) | V1: 3 Fail, 1 Blocked → V2: Pass |
+| FR-10 | 4 | — | — | V1: 1 Fail → V2: Pass |
 | FR-11 | 3 | — | — | |
 | FR-12 | 4 | Có (2 m) | Có (E khi không có mục tiêu) | |
-| FR-13 | 8 | Có (+30°) | Có (ảnh lỗi) | 1 Fail, 1 Blocked |
+| FR-13 | 8 | Có (+30°) | Có (ảnh lỗi) | V1: 1 Fail → V2: Pass; 1 Blocked |
 | FR-14 | 6 | Có (99/100 °C) | Có (đóng giữa chừng) | |
 | FR-15 | 2 | Có (62 → 63) | — | |
 | FR-16 | 7 | Có (★ giữ khi điểm thấp hơn) | Có (chưa chọn, thoát giữa bài) | |
 | FR-17 | 1 | — | — | Phần ◎ ở TC-FR10-02 |
 | FR-18 | 3 | Có (62/63) | — | |
-| FR-19 | 7 | — | Có (JSON hỏng, sai version, mã lạ, chặn lưu, ghi lỗi) | 1 Fail |
+| FR-19 | 7 | — | Có (JSON hỏng, sai version, mã lạ, chặn lưu, ghi lỗi) | V1: 1 Fail → V2: Pass |
 | FR-20 | 2 | — | Có (Hủy, ESC) | |
-| FR-21 | 4 | — | Có (ESC chồng lớp) | 1 Fail |
+| FR-21 | 4 | — | Có (ESC chồng lớp) | V1: 1 Fail → V2: Pass |
 | FR-22 | 5 | Có (miền giá trị) | Có (FPS thấp) | |
 | FR-23 | 3 | — | — | |
 | FR-24 | 2 | — | — | |
@@ -232,10 +232,11 @@ Dùng khi anh Duy thử trên Edge, Firefox, Chrome Android, Safari iOS:
 6. Tải lại trang: "Tiếp tục tham quan", tiến độ còn.
 7. Bật đêm, xem pháo hoa ở khuôn viên. Tắt tiếng.
 
-## 6. Tổng hợp kết quả (vòng 1, 2026-10-06)
+## 6. Tổng hợp kết quả
 
-| Tổng | Pass | Fail | Blocked |
-|:----:|:----:|:----:|:-------:|
-| 124 | 107 | 7 | 10 |
+| Vòng | Ngày | Bản | Tổng | Pass | Fail | Blocked |
+|------|------|-----|:----:|:----:|:----:|:-------:|
+| 1 | 2026-10-06 | `main` `9f0b780` | 124 | 107 | 7 | 10 |
+| 2 | 2026-10-06 | nhánh `fix/qa-round1` | 124 | 115 | 0 | 9 |
 
-TC Fail: TC-FR09-01, TC-FR09-02, TC-FR09-04 (BUG-01, Major); TC-FR13-03 (BUG-02, Major); TC-FR10-03 (BUG-03, Minor); TC-FR21-03 (BUG-04, Minor); TC-FR19-06 (BUG-05, Minor). Chi tiết ở [test-report](test-report.md).
+Vòng 2 chạy lại 7 TC Fail và TC-FR09-03, cộng regression: mở/đóng 📜 bằng E, hoàn thành 🎛 `a1-cay-va-rung`, 🖼 không có công cụ xoay, mở/thoát trắc nghiệm, "Về sảnh", 72 unit test. Chi tiết ở [test-report](test-report.md).

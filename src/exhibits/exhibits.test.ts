@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { quiz } from '../content/quiz';
 import { shuffleOptions } from '../quiz/session';
+import * as THREE from 'three';
 import { pickTarget } from './proximity';
+import { clampModelPitch, MODEL_PITCH_MAX, modelRotator } from './viewer';
 
 describe('pickTarget (BR-S09)', () => {
   // Nhân vật ở gốc, nhìn theo +z (yaw = 0).
@@ -35,5 +37,25 @@ describe('shuffleOptions (FR-16)', () => {
       expect([...s.options].sort()).toEqual([...q.options].sort());
       expect(s.options[s.answer]).toBe(q.options[q.answer]);
     }
+  });
+});
+
+describe('xoay mô hình 🧊 (FR-13 2a)', () => {
+  it('kẹp góc dọc trong ±30°', () => {
+    expect(clampModelPitch(1)).toBeCloseTo(Math.PI / 6);
+    expect(clampModelPitch(-1)).toBeCloseTo(-Math.PI / 6);
+    expect(clampModelPitch(0.2)).toBe(0.2);
+  });
+
+  it('kéo lên hết dừng ở +30°; đặt lại góc về hướng ban đầu', () => {
+    const mesh = new THREE.Object3D();
+    mesh.rotation.y = 1;
+    const start = mesh.quaternion.clone();
+    const r = modelRotator(mesh);
+    r.rotate(500, -10000);
+    expect(r.pitch).toBeCloseTo(MODEL_PITCH_MAX);
+    expect(mesh.quaternion.angleTo(start)).toBeGreaterThan(0.1);
+    r.reset();
+    expect(mesh.quaternion.angleTo(start)).toBeCloseTo(0);
   });
 });

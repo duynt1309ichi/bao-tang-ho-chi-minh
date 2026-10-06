@@ -10,7 +10,10 @@ const AVG: Partial<Record<string, string>> = { parquet: '#8a6142', marble: '#b4a
 
 /** Ghi scene.obj (mỗi nhóm vật liệu một object, vt = uv1) và scene.json (vật liệu, đèn) cho tools/blender/bake_lightmap.py. */
 export function exportBake() {
-  const { groups, spots, strips, density } = buildGeometry(layout);
+  const built = buildGeometry(layout);
+  const { spots, strips, density } = built;
+  // Mô hình 🧊 là mesh riêng ở runtime; trong bake vẫn là vật đổ bóng như các khối động khác.
+  const groups = [...built.groups, ...built.models.map((m) => ({ key: m.key, baked: false, geo: m.geo.clone().applyMatrix4(m.matrix) }))];
   const lines: string[] = [];
   let base = 1;
   for (const g of groups) {

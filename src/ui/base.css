@@ -126,6 +126,15 @@ kbd { display: inline-block; margin-right: 8px; padding: 0 6px; border: 1px soli
 .setting { min-height: var(--hit); }
 .setting input[type='checkbox'] { width: 22px; height: 22px; accent-color: var(--accent); }
 .panel-center.wide { width: min(860px, calc(100% - 32px)); }
+.room-popup { width: min(440px, calc(100% - 32px)); border-left: 6px solid; }
+/* Hiện vật 🧊: kéo trên khung 3D để xoay (SCR-07 element 9) */
+.overlay.model-drag { cursor: grab; touch-action: none; }
+.overlay.model-drag:active { cursor: grabbing; }
+.model-tools {
+  position: absolute; left: 16px; bottom: 16px; display: flex; align-items: center; gap: 12px;
+  background: var(--surface); border: var(--border); border-radius: var(--radius-sm); padding: 8px 8px 8px 16px;
+}
+.model-tools p { margin: 0; }
 h3 { font-size: var(--fs-lg); margin: 16px 0 8px; }
 .table-scroll { max-height: 40vh; overflow: auto; margin-top: 12px; border-top: var(--border); }
 table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
@@ -217,6 +226,7 @@ a { color: var(--accent); overflow-wrap: anywhere; }
   .hud { max-width: calc(100% - 184px); }
   .panel-side { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; height: 60%; transition: height var(--t-base) ease-out; }
   .panel-side.expanded { height: calc(100% - 16px); }
+  .model-tools { bottom: auto; top: 8px; left: 8px; }
   .sheet-handle {
     display: block; align-self: center; width: 72px; height: 24px; margin: -8px 0 4px; padding: 0; border: 0; background: none; cursor: pointer;
   }

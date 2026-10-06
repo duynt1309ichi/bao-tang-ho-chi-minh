@@ -1,32 +1,42 @@
 # Test Report — Bảo tàng Triết học
 
-| Phiên bản | v0.1 (vòng 1) | Ngày | 2026-10-06 | Trạng thái | DONE — chờ dev sửa lỗi |
+| Phiên bản | v0.2 (vòng 2) | Ngày | 2026-10-06 | Trạng thái | DONE — sạch lỗi, chờ đo trên máy thật |
 |-----------|---------------|------|------------|------------|------------------------|
 
-- **Bản được test:** `main` tại `9f0b780` (M1–M5 đã nghiệm thu GATE-4).
+- **Bản được test:** vòng 1 trên `main` tại `9f0b780` (M1–M5 đã nghiệm thu GATE-4); vòng 2 trên nhánh `fix/qa-round1` (sửa 5 lỗi).
 - **Môi trường:** Windows 11, Chrome trong khung Browser của Claude Code, dev server cổng 5173; build production `npm run build`.
 - **Căn cứ:** [test-plan](test-plan.md), [test-cases](test-cases.md).
 
 ## 1. Tóm tắt
 
-| Tổng TC | Pass | Fail | Blocked | Tỉ lệ đạt (trên số đã chạy) |
-|:-------:|:----:|:----:|:-------:|:---------------------------:|
-| 124 | 107 | 7 | 10 | 93,9% (107/114) |
+| Vòng | Tổng TC | Pass | Fail | Blocked | Tỉ lệ đạt (trên số đã chạy) |
+|------|:-------:|:----:|:----:|:-------:|:---------------------------:|
+| 1 | 124 | 107 | 7 | 10 | 93,9% (107/114) |
+| 2 | 124 | 115 | 0 | 9 | 100% (115/115) |
 
-- **Unit test:** 69/69 xanh (14 file). **Build:** xanh, kiểm FR-26 đạt. **`npm audit --omit=dev`:** 0 lỗ hổng.
-- **Lỗi:** 5 lỗi, gồm 0 Blocker, 0 Critical, 2 Major, 3 Minor.
+- **Unit test:** 72/72 xanh (15 file; vòng 2 thêm test xoay mô hình và `storage/kv`). **Build:** xanh, kiểm FR-26 đạt. **`npm audit --omit=dev`:** 0 lỗ hổng.
+- **Lỗi:** vòng 1 tìm 5 lỗi (2 Major, 3 Minor). Vòng 2: cả 5 đã sửa và kiểm lại đạt, không phát sinh lỗi mới ở phần regression.
 - **Độ phủ:** 27/27 FR có TC; 12/14 NFR có TC (NFR-06, NFR-12 đo ở UAT B6).
-- **Kết luận:** chưa đủ tiêu chí ra (test-plan mục 4) vì còn 2 lỗi Major. Không có lỗi chặn: người chơi đi hết bảo tàng, mở đủ 63 hiện vật, làm trắc nghiệm và lưu tiến độ được. Hai lỗi Major là hai phần SRS đã đặc tả nhưng chưa được hiện thực (popup vào phòng, xoay mô hình 🧊).
+- **Kết luận:** phần chức năng đạt tiêu chí ra (test-plan mục 4): 0 Blocker, 0 Critical, 0 Major. Còn 9 TC Blocked, chủ yếu là phép đo trên máy thật (NFR-01, 02, 04, 05). Mục 4 ghi cách gỡ; anh Duy chạy checklist hoặc quyết định dời sang UAT B6.
 
 ## 2. Danh sách lỗi
 
 | ID | Mức | FR | Tóm tắt | TC | Trạng thái |
 |----|-----|----|---------|----|-----------|
-| BUG-01 | Major | FR-09 | Chưa có popup vào phòng (SCR-06) và toast MSG-05 | TC-FR09-01, 02, 04 (03 Blocked) | Mở |
-| BUG-02 | Major | FR-13 2a | Chưa có khung xoay mô hình 🧊 và nút "Đặt lại góc" (23 hiện vật) | TC-FR13-03 | Mở |
-| BUG-03 | Minor | FR-10 | Bấm M khi bản đồ phóng to đang mở không thu nhỏ được | TC-FR10-03 | Mở |
-| BUG-04 | Minor | FR-21 b | Ẩn tab không mở menu tạm dừng khi chưa khóa con trỏ (điện thoại, hoặc máy tính chưa bấm vào khung 3D) | TC-FR21-03 | Mở |
-| BUG-05 | Minor | FR-19 3b | Ghi cài đặt thất bại không hiện MSG-11 | TC-FR19-06 | Mở |
+| BUG-01 | Major | FR-09 | Chưa có popup vào phòng (SCR-06) và toast MSG-05 | TC-FR09-01 → 04 | Đã sửa, kiểm lại đạt (V2) |
+| BUG-02 | Major | FR-13 2a | Chưa có khung xoay mô hình 🧊 và nút "Đặt lại góc" (23 hiện vật) | TC-FR13-03 | Đã sửa, kiểm lại đạt (V2) |
+| BUG-03 | Minor | FR-10 | Bấm M khi bản đồ phóng to đang mở không thu nhỏ được | TC-FR10-03 | Đã sửa, kiểm lại đạt (V2) |
+| BUG-04 | Minor | FR-21 b | Ẩn tab không mở menu tạm dừng khi chưa khóa con trỏ | TC-FR21-03 | Đã sửa, kiểm lại đạt (V2) |
+| BUG-05 | Minor | FR-19 3b | Ghi cài đặt thất bại không hiện MSG-11 | TC-FR19-06 | Đã sửa, kiểm lại đạt (V2) |
+
+**Cách sửa (nhánh `fix/qa-round1`)**
+- BUG-01: thêm `ui/roomPopup.ts` (SCR-06, cả phòng ôn tập). `main.ts` mở popup khi nhân vật bước vào một phòng chưa vào trong phiên, vào lại thì hiện toast MSG-05. "Quay lại"/ESC lùi 1 m về phía vừa đi vào.
+- BUG-02: mô hình 🧊 tách khỏi khối hình gộp thành mesh riêng (`world/geometry.ts` `ModelPart`, `world/blockout.ts` `models`). Thêm `exhibits/viewer.ts` (`modelRotator`, `clampModelPitch`). Bảng hiện vật cho kéo trên khung 3D để xoay và có nút "Đặt lại góc"; đóng bảng thì trả mô hình về góc cũ. `scripts/bake-scene.ts` vẫn xuất mô hình làm vật đổ bóng nên lightmap bake lại cho kết quả như cũ.
+- BUG-03: lớp bản đồ đánh dấu phím M đã dùng (`preventDefault`); bộ nghe phím ở `main.ts` bỏ qua sự kiện đã được dùng.
+- BUG-04: `main.ts` nghe `visibilitychange`, tab ẩn khi đang chơi thì mở menu tạm dừng.
+- BUG-05: `storage/kv.ts` gọi `onFail` ở lần đọc/ghi lỗi đầu tiên (cả tiến độ lẫn cài đặt); `main.ts` hiện MSG-11 từ đó.
+
+## Chi tiết lỗi (vòng 1)
 
 ### BUG-01 — Chưa có popup vào phòng (FR-09, SCR-06)
 - **Tái lập:** phiên mới → đứng ở hành lang (5, 0, 0) → đi vào Phòng 01. Làm tương tự với phòng ôn tập.
@@ -83,7 +93,6 @@
 | TC-FR05-06, TC-FR25-01 | Khung Browser nhúng: không có chuột thật để kéo khi pointer lock bị từ chối; không vào được toàn màn hình | anh Duy thử trên Chrome thật (2 phút) |
 | TC-FR06-07, TC-NFR01-01, TC-NFR02-01, TC-NFR04-01, TC-NFR05-02 | Chưa có thiết bị | Checklist test-plan mục 4. Nếu không có máy thì dời sang UAT B6 |
 | TC-NFR03-02 | Cần đo trên host thật có băng thông giới hạn | Đo trên Vercel Preview ở B6 |
-| TC-FR09-03 | Phụ thuộc BUG-01 | Chạy lại sau khi sửa |
 | TC-FR13-08 | Ưu tiên thấp, chưa dựng được ảnh lỗi | Chạy ở vòng 2 |
 
 ## 5. Ghi chú (không tính là lỗi)
@@ -95,6 +104,6 @@
 
 ## 6. Đề xuất
 
-1. Dev sửa BUG-01 và BUG-02 (Major) trước khi trình nghiệm thu. Ba lỗi Minor sửa cùng đợt vì mỗi lỗi chỉ cần vài dòng.
-2. Tester chạy lại vòng 2: các TC Fail, TC-FR09-03, TC-FR13-08, cộng regression luồng smoke.
-3. anh Duy chạy checklist máy thật (test-plan mục 4), hoặc quyết định dời các NFR hiệu năng và tương thích sang UAT B6.
+1. Trình anh Duy nghiệm thu chức năng (GATE-4) cho bản sau sửa lỗi, rồi merge `fix/qa-round1` vào `main`.
+2. anh Duy chạy checklist máy thật (test-plan mục 4), hoặc quyết định dời NFR-01, 02, 04, 05 và TC-NFR03-02 sang UAT B6.
+3. Sang B5: security-engineer làm `docs/security/pentest-report.md`.

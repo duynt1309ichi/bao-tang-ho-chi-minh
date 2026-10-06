@@ -96,6 +96,7 @@ export function buildGeometry(layout: Layout) {
   const occluders: THREE.Box3[] = [];
   const spots: Spot[] = [];
   const strips: Strip[] = [];
+  const models: ModelPart[] = [];
   const add = (geo: THREE.BufferGeometry, key: MatKey, opts: { solid?: boolean; uv?: Uv; baked?: boolean } = {}) => {
     if (geo.index) geo = geo.toNonIndexed();
     if (geo.getAttribute('position').count === 36) occluders.push(new THREE.Box3().setFromBufferAttribute(geo.getAttribute('position') as THREE.BufferAttribute)); // hộp đặc
@@ -192,7 +193,10 @@ export function buildGeometry(layout: Layout) {
     const e = exhibits[index];
     const zone = rooms.find((r) => r.id === e.room)!.zone;
     const m = new THREE.Matrix4().makeRotationY(p.rotY).setPosition(p.pos[0], 0, p.pos[2]);
-    for (const part of exhibitParts(e.kind, zone, atlasRect(index))) add(part.geo.applyMatrix4(m), part.mat, { solid: part.solid, uv: part.uv, baked: part.baked });
+    for (const part of exhibitParts(e.kind, zone, atlasRect(index))) {
+      if (part.model) models.push({ id: p.id, key: part.mat, geo: part.geo, matrix: m.clone().multiply(new THREE.Matrix4().makeTranslation(...part.model)) });
+      else add(part.geo.applyMatrix4(m), part.mat, { solid: part.solid, uv: part.uv, baked: part.baked });
+    }
 
     // Đèn rọi 3200 K: chóa trên trần trước hiện vật, nhắm vào tâm mặt trưng bày.
     const area = layout.areas.find((a) => inside(a, p.pos[0], p.pos[2]))!;
@@ -212,7 +216,7 @@ export function buildGeometry(layout: Layout) {
   const baked = groups.filter((g) => g.baked);
   const density = packLightmap(baked.map((g) => g.geo), occluders, baked.map((g) => LIGHTMAP_SCALE[g.key] ?? 1));
   const collider = mergeGeometries(solids.map(toPositionOnly));
-  return { groups, collider, spots, strips, density };
+  return { groups, models, collider, spots, strips, density };
 }
 
 /** Khu mang biển ở cửa, theo thứ tự ô trong atlas biển (signs.ts SIGN_ENTRIES). */
@@ -229,6 +233,16 @@ interface Part {
   solid?: boolean;
   uv?: Uv;
   baked?: boolean;
+  /** Mô hình 🧊 xoay được (FR-13 2a): không gộp, `geo` có tâm ở gốc, đặt tại điểm này (tọa độ riêng). */
+  model?: Vec3;
+}
+
+/** Mô hình 🧊 của một hiện vật: mesh riêng để bảng hiện vật xoay được. `matrix` đặt `geo` vào thế giới. */
+export interface ModelPart {
+  id: string;
+  key: MatKey;
+  geo: THREE.BufferGeometry;
+  matrix: THREE.Matrix4;
 }
 
 /** Hình khối từng loại hiện vật trong hệ tọa độ riêng (mặt trước hướng +z, gốc ở sàn). Mô hình thật thay ở M4/M5. */
@@ -254,7 +268,7 @@ function exhibitParts(kind: ExhibitKind, zone: ZoneId, cell: Uv): Part[] {
       return [
         { geo: box(0, 0.5, 0, 0.8, 1.0, 0.8), mat: 'plinth', solid: true },
         { geo: box(0, 1.02, 0, 0.86, 0.04, 0.86), mat: 'trim' },
-        { geo: new THREE.IcosahedronGeometry(0.24, 0).translate(0, 1.3, 0), mat: `gem${zone}`, baked: false },
+        { geo: new THREE.IcosahedronGeometry(0.24, 0), mat: `gem${zone}`, model: [0, 1.3, 0] },
         face(0.42, 0.62, 0.401),
       ];
     case 'interactive': // bệ tối viền đồng — thao tác 🎛 ở M4

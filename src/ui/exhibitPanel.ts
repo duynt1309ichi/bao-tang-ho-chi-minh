@@ -3,6 +3,7 @@ import { formatPages, room, roomNo } from '../content';
 import type { Exhibit, ExhibitKind } from '../content/types';
 import { mount, transition, type Event, type State } from '../exhibits/interactive/base';
 import { INTERACTIVES } from '../exhibits/interactive';
+import type { ModelRotator } from '../exhibits/viewer';
 import { h, openOverlay } from './dom';
 
 // 🖼 và 🎛 mặc định hiện dạng chữ (ô vuông trên nhiều máy) — ️ ép hiện dạng emoji.
@@ -29,8 +30,11 @@ function content(e: Exhibit) {
   return body;
 }
 
-/** SCR-07, và SCR-08 cho hiện vật 🎛 (FR-14). Đóng bằng ✕, ESC hoặc E (FR-13 bước 4). */
-export function showExhibitPanel(ui: HTMLElement, e: Exhibit, onClose: () => void) {
+/**
+ * SCR-07, và SCR-08 cho hiện vật 🎛 (FR-14). Đóng bằng ✕, ESC hoặc E (FR-13 bước 4).
+ * `model`: hiện vật 🧊 — kéo trên khung 3D (ngoài bảng) để xoay, nút "Đặt lại góc" (FR-13 2a, SCR-07 element 9).
+ */
+export function showExhibitPanel(ui: HTMLElement, e: Exhibit, onClose: () => void, model?: ModelRotator) {
   const r = room(e.room);
   const closeBtn = h('button', { class: 'icon-btn', 'aria-label': 'Đóng' }, '✕');
   // Điện thoại: bảng chiếm 60% dưới; bấm tay kéo để mở toàn màn / thu lại (FSD SCR-07).
@@ -93,6 +97,7 @@ export function showExhibitPanel(ui: HTMLElement, e: Exhibit, onClose: () => voi
     if (closed) return;
     closed = true;
     unmount?.();
+    model?.reset();
     closeOverlay();
     onClose();
   };
@@ -105,4 +110,34 @@ export function showExhibitPanel(ui: HTMLElement, e: Exhibit, onClose: () => voi
       if (ev.code === 'KeyE' && !ev.repeat && !(ev.target instanceof HTMLInputElement)) close();
     },
   });
+  if (model) attachModelTools(dialog.parentElement!, model);
+}
+
+/** Lớp phủ của bảng phủ cả khung 3D: kéo trên phần lớp phủ ngoài bảng thì xoay mô hình (chuột và ngón tay). */
+function attachModelTools(overlay: HTMLElement, model: ModelRotator) {
+  const reset = h('button', { class: 'btn' }, 'Đặt lại góc');
+  reset.addEventListener('click', () => model.reset());
+  overlay.append(h('div', { class: 'model-tools' }, h('p', {}, '🧊 Kéo để xoay mô hình'), reset));
+  overlay.classList.add('model-drag');
+  let last: { id: number; x: number; y: number } | null = null;
+  overlay.addEventListener('pointerdown', (ev) => {
+    if (ev.target !== overlay || last) return;
+    last = { id: ev.pointerId, x: ev.clientX, y: ev.clientY };
+    try {
+      overlay.setPointerCapture(ev.pointerId); // kéo ra ngoài cửa sổ vẫn nhận move/up
+    } catch {
+      /* con trỏ đã nhả */
+    }
+  });
+  overlay.addEventListener('pointermove', (ev) => {
+    if (last?.id !== ev.pointerId) return;
+    model.rotate(ev.clientX - last.x, ev.clientY - last.y);
+    last.x = ev.clientX;
+    last.y = ev.clientY;
+  });
+  const up = (ev: PointerEvent) => {
+    if (last?.id === ev.pointerId) last = null;
+  };
+  overlay.addEventListener('pointerup', up);
+  overlay.addEventListener('pointercancel', up);
 }

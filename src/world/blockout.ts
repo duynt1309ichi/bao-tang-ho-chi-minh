@@ -27,7 +27,7 @@ const load = (url: string) => loader.loadAsync(assetUrl(url));
  * texture CC0 Poly Haven 1K/2K (HLD 7.3) và lightmap bake bằng Blender (tools/blender/bake_lightmap.py).
  */
 export function buildBlockout(layout: Layout) {
-  const { groups, collider, spots } = buildGeometry(layout);
+  const { groups, models: modelParts, collider, spots } = buildGeometry(layout);
 
   const canvases: Record<CanvasName, THREE.Texture> = {
     atlas: exhibitAtlas(exhibits, rooms),
@@ -48,9 +48,10 @@ export function buildBlockout(layout: Layout) {
   const group = new THREE.Group();
   const byTex = new Map<TexName, THREE.MeshStandardMaterial[]>();
   const baked: THREE.MeshStandardMaterial[] = [];
+  const plain = (spec: MatSpec) => new THREE.MeshStandardMaterial({ color: spec.color, roughness: spec.roughness, metalness: spec.metalness ?? 0 });
   for (const g of groups) {
     const spec: MatSpec = MATS[g.key];
-    const mat = new THREE.MeshStandardMaterial({ color: spec.color, roughness: spec.roughness, metalness: spec.metalness ?? 0 });
+    const mat = plain(spec);
     if (spec.map && spec.map in canvases) mat.map = canvases[spec.map as CanvasName];
     else if (spec.map) (byTex.get(spec.map as TexName) ?? byTex.set(spec.map as TexName, []).get(spec.map as TexName)!).push(mat);
     if (spec.emissive) {
@@ -65,9 +66,22 @@ export function buildBlockout(layout: Layout) {
     group.add(mesh);
   }
 
+  // Mô hình 🧊: mỗi hiện vật một mesh để bảng hiện vật xoay được (FR-13 2a); vật liệu dùng chung theo khu.
+  const modelMats = new Map<string, THREE.MeshStandardMaterial>();
+  const models = new Map<string, THREE.Mesh>();
+  for (const part of modelParts) {
+    const mat = modelMats.get(part.key) ?? modelMats.set(part.key, plain(MATS[part.key])).get(part.key)!;
+    const mesh = new THREE.Mesh(part.geo, mat);
+    part.matrix.decompose(mesh.position, mesh.quaternion, mesh.scale);
+    mesh.castShadow = mesh.receiveShadow = true;
+    models.set(part.id, mesh);
+    group.add(mesh);
+  }
+
   let texSize: TexSize | null = null;
   return {
     group,
+    models,
     collider,
     spots,
     /** Tải (hoặc đổi) bộ texture 1K/2K; resolve khi mọi texture đã gắn. */

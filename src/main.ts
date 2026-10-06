@@ -14,6 +14,7 @@ import { initialAssets, loadBundle } from './core/loader';
 import { stepsFor } from './core/loop';
 import { FpsMonitor, lower, PRESETS, QUALITY_LABEL, type Quality } from './core/quality';
 import { pickTarget } from './exhibits/proximity';
+import { modelRotator } from './exhibits/viewer';
 import { hints } from './quiz/session';
 import { CameraFly, FollowCamera } from './player/camera';
 import { loadCharacter, type CharacterId } from './player/character';
@@ -29,6 +30,7 @@ import { createMinimap } from './ui/minimap';
 import { showExhibitPanel } from './ui/exhibitPanel';
 import { showPauseMenu } from './ui/pauseMenu';
 import { showQuizPanel } from './ui/quizPanel';
+import { showRoomPopup } from './ui/roomPopup';
 import { createRotateHint, showCharacterSelect, showLoading, showMessageScreen, showTitle, watchContextLoss } from './ui/screens';
 import { showTutorial } from './ui/tutorial';
 import { buildBlockout } from './world/blockout';
@@ -134,14 +136,12 @@ async function start() {
   const toast = createToasts(ui);
   const rotateHint = createRotateHint(ui);
 
-  let warnedStorage = false;
+  // MSG-11 một lần mỗi phiên, cho mọi lần đọc/ghi lỗi (FR-19 3a, 3b) — kể cả lỗi xảy ra trước khi có toast.
+  kv.onFail = () => toast('Trình duyệt đang chặn lưu trữ nên tiến độ sẽ mất khi đóng trang.', 'warn');
+  if (kv.failed) kv.onFail();
   const renderProgress = () => {
     bar.value = progress.exploredCount;
     count.textContent = `${progress.exploredCount}/${total}`;
-    if (kv.failed && !warnedStorage) {
-      warnedStorage = true;
-      toast('Trình duyệt đang chặn lưu trữ nên tiến độ sẽ mất khi đóng trang.', 'warn');
-    }
   };
   progress.onChange = renderProgress;
   renderProgress();
@@ -197,7 +197,7 @@ async function start() {
         controls(false);
         showCompletion(ui, total, () => (player.teleport(layout.spawns['review-door']), resume()), resume);
       }
-    });
+    }, museum.models.has(e.id) ? modelRotator(museum.models.get(e.id)!) : undefined);
   };
   function controls(on: boolean) {
     input.enabled = touch.enabled = on;
@@ -246,6 +246,10 @@ async function start() {
     });
   };
   helpBtn.addEventListener('click', () => openTutorial(false));
+  // FR-21 b: ẩn tab khi đang chơi → mở menu tạm dừng (máy chưa khóa con trỏ, điện thoại); nhạc dừng ở audio.
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && mode === 'play') openMenu();
+  });
   document.addEventListener('pointerlockchange', () => {
     if (document.pointerLockElement !== canvas) openMenu();
   });
@@ -293,7 +297,8 @@ async function start() {
   });
   fullBtn.addEventListener('click', () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {}));
   addEventListener('keydown', (e) => {
-    if (overlayOpen() || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    // defaultPrevented: phím vừa được một lớp giao diện dùng (M đóng bản đồ) thì không mở lại.
+    if (e.defaultPrevented || overlayOpen() || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.code === 'KeyN') toggleNight();
     if (e.code === 'KeyM') openMap();
   });
@@ -328,6 +333,21 @@ async function start() {
 
   let area: AreaId | null = null;
   const forward = new THREE.Vector3();
+
+  // FR-09: lần đầu vào một phòng trong phiên → SCR-06; vào lại → MSG-05. "Quay lại" lùi 1 m về phía vừa đi vào.
+  const visited = new Set<AreaId>();
+  const outside = new THREE.Vector3(); // vị trí cuối cùng ở ngoài các phòng
+  const isRoom = (a: AreaId): a is RoomId | 'review' => a === 'review' || a.startsWith('P');
+  const enterArea = (a: AreaId) => {
+    if (!isRoom(a) || overlayOpen()) return;
+    if (visited.has(a)) return toast(areaName(a));
+    controls(false);
+    showRoomPopup(ui, a, new Set(progress.value.explored), () => (visited.add(a), resume()), () => {
+      const back = outside.clone().sub(player.feet).setY(0);
+      if (back.lengthSq() > 1e-6) player.feet.addScaledVector(back.normalize(), 1);
+      resume();
+    });
+  };
 
   const resize = () => {
     gfx.resize();
@@ -437,7 +457,9 @@ async function start() {
     if (here && here !== area) {
       area = here;
       areaLabel.textContent = areaName(here);
+      if (mode === 'play') enterArea(here);
     }
+    if (area && !isRoom(area)) outside.copy(player.feet);
     const dt = Math.min(elapsed, 0.1);
     env.follow(player.feet, dt);
     const nightTarget = settings.value.night ? 1 : 0;
