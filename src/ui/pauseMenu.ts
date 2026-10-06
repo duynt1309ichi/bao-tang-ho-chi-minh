@@ -10,6 +10,7 @@ export interface MenuActions {
   setQuality: (q: Quality) => void;
   setSensitivity: (v: number) => void;
   setInvertY: (v: boolean) => void;
+  setVolumes: (music: number, sfx: number) => void;
   isTouch: boolean;
   toLobby: () => void;
   /** null khi chưa khám phá đủ 63/63 (ẩn nút "Xem màn hoàn thành"). */
@@ -60,7 +61,7 @@ export function showPauseMenu(ui: HTMLElement, a: MenuActions) {
   );
 }
 
-/** SCR-13 — cài đặt (FR-22). Âm lượng và nhân vật thêm cùng âm thanh / nhân vật (M4). */
+/** SCR-13 — cài đặt (FR-22). Nhóm chọn nhân vật ẩn vì mới có một nhân vật (FSD SCR-13). */
 function showSettings(ui: HTMLElement, a: MenuActions, onBack: () => void) {
   const s = a.settings();
   const back = h('button', { class: 'btn' }, '← Quay lại');
@@ -78,6 +79,17 @@ function showSettings(ui: HTMLElement, a: MenuActions, onBack: () => void) {
     a.setSensitivity(Number(sens.value));
     sensOut.textContent = fmt(Number(sens.value));
   });
+  const vol = (id: string, label: string, value: number, set: (v: number) => void) => {
+    const input = h('input', { type: 'range', min: '0', max: '100', step: '5', id, value: String(value) });
+    const out = h('output', { for: id }, String(value));
+    input.addEventListener('input', () => {
+      set(Number(input.value));
+      out.textContent = input.value;
+    });
+    return h('div', { class: 'setting' }, h('label', { for: id }, label), h('span', { class: 'range' }, input, out));
+  };
+  const music = vol('vol-music', 'Nhạc nền', s.volumeMusic, (v) => a.setVolumes(v, a.settings().volumeSfx));
+  const sfx = vol('vol-sfx', 'Hiệu ứng', s.volumeSfx, (v) => a.setVolumes(a.settings().volumeMusic, v));
   const invert = h('input', { type: 'checkbox', id: 'invert', role: 'switch' });
   invert.checked = s.invertY;
   invert.addEventListener('change', () => a.setInvertY(invert.checked));
@@ -89,6 +101,8 @@ function showSettings(ui: HTMLElement, a: MenuActions, onBack: () => void) {
     h('div', { class: 'setting' }, h('span', { id: 'q-label' }, 'Chất lượng đồ họa'), group),
     h('div', { class: 'setting' }, h('label', { for: 'sens' }, 'Độ nhạy camera'), h('span', { class: 'range' }, sens, sensOut)),
     h('div', { class: 'setting' }, h('label', { for: 'invert' }, 'Đảo trục dọc'), invert),
+    music,
+    sfx,
     h('div', { class: 'actions' }, back),
   );
   const close = openOverlay(ui, dialog, { onEsc: () => done(), scrim: false, focus: group.querySelector<HTMLInputElement>('input:checked') ?? back });

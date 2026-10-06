@@ -111,7 +111,14 @@ kbd { display: inline-block; margin-right: 8px; padding: 0 6px; border: 1px soli
 .segmented span { display: grid; place-items: center; min-height: var(--hit); min-width: var(--hit); padding: 0 14px; border-radius: 999px; font-weight: 600; font-size: var(--fs-sm); }
 .segmented input:checked + span { background: var(--accent); color: var(--accent-ink); }
 .segmented input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
-.hud-right { position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; }
+.hud-right { position: absolute; top: 16px; right: 16px; display: grid; gap: 8px; justify-items: end; }
+.hud-buttons { display: flex; gap: 8px; }
+.minimap { width: 160px; height: 160px; border-radius: var(--radius-sm); border: var(--border); cursor: zoom-in; }
+.bigmap { display: block; width: 100%; aspect-ratio: 16 / 7; border-radius: var(--radius-sm); }
+.legend { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: var(--fs-sm); color: var(--ink-muted); }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.sw-a { background: var(--zone-a); } .sw-b { background: var(--zone-b); } .sw-c { background: var(--zone-c); }
+.icon-btn[aria-pressed='true'] { border-color: var(--accent); }
 .danger-btn { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 50%, transparent); }
 .range { display: inline-flex; align-items: center; gap: 12px; }
 .range input { width: 180px; accent-color: var(--accent); }
@@ -129,8 +136,21 @@ a { color: var(--accent); overflow-wrap: anywhere; }
 .keys dt { font-weight: 600; color: var(--accent); }
 .keys dd { margin: 0; }
 
+/* Hiện vật 🎛 (SCR-08) */
+.stage { display: block; width: 100%; aspect-ratio: 440 / 248; background: #1c1a16; border-radius: var(--radius-sm); border: var(--border); }
+.stage-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.stage-chip { padding: 0 12px; font-size: var(--fs-sm); }
+.stage-slider { display: grid; gap: 4px; flex: 1 1 100%; font-size: var(--fs-sm); color: var(--ink-muted); }
+.stage-slider input { width: 100%; accent-color: var(--accent); min-height: var(--hit); }
+.stage-status { min-height: 3em; margin: 8px 0 0; color: var(--ink); }
+.link-btn { background: none; border: 0; color: var(--accent); font: inherit; text-decoration: underline; cursor: pointer; min-height: var(--hit); padding: 0 8px; }
+.actions.start { justify-content: flex-start; }
+
 /* Điện thoại: bảng hiện vật chiếm 60% dưới (FSD SCR-07) */
 @media (max-width: 767px) {
   .panel { padding: 16px; }
+  .minimap { width: 112px; height: 112px; }
+  .hud-buttons { flex-wrap: wrap; justify-content: flex-end; max-width: 148px; }
+  .hud { max-width: calc(100% - 184px); }
   .panel-side { top: auto; left: 8px; right: 8px; bottom: 8px; width: auto; height: 60%; }
 }

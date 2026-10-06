@@ -1,7 +1,7 @@
 # Bake lightmap bảo tàng bằng Cycles (HLD 3, LLD tools/blender/bake.py).
 #   node scripts/export-bake.mjs                                   → assets-src/bake/scene.obj + scene.json
-#   D:\blender\blender.exe -b --python tools/blender/bake_lightmap.py [-- --samples 512]
-#   → public/assets/lightmap.webp + public/assets/lightmap.json ({ "scale": … })
+#   D:\blender\blender.exe -b --python tools/blender/bake_lightmap.py [-- --samples 256] [--night]
+#   → public/assets/lightmap.webp + lightmap.json ({ "scale": … }); --night → lightmap_night.* (chỉ đèn + trăng, FR-23)
 #
 # Ánh sáng: dải đèn trần (đèn vùng), đèn rọi 3200 K cho từng hiện vật, trời HDRI (Poly Haven, CC0) có mặt trời.
 # Bake DIFFUSE chỉ gồm DIRECT + INDIRECT (không nhân màu vật liệu) = bức xạ tới mặt; runtime nhân với màu texture.
@@ -22,7 +22,9 @@ HDRI = os.path.join(ROOT, 'assets-src', 'hdri', 'kloofendal_2k.hdr')
 OUT = os.path.join(ROOT, 'public', 'assets')
 
 args = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
-SAMPLES = int(args[args.index('--samples') + 1]) if '--samples' in args else 512
+SAMPLES = int(args[args.index('--samples') + 1]) if '--samples' in args else 256
+NIGHT = '--night' in args
+NAME = 'lightmap_night' if NIGHT else 'lightmap'
 
 cfg = json.load(open(os.path.join(BAKE, 'scene.json'), encoding='utf-8'))
 SIZE = cfg['size']
@@ -82,10 +84,10 @@ for i, s in enumerate(cfg['strips']):
 K3200 = (1.0, 0.72, 0.42)
 for i, s in enumerate(cfg['spots']):
     light = bpy.data.lights.new(f'spot{i}', 'SPOT')
-    light.energy = 160
+    light.energy = 45
     light.color = K3200
-    light.spot_size = math.radians(42)
-    light.spot_blend = 0.5
+    light.spot_size = math.radians(55)
+    light.spot_blend = 0.8
     light.shadow_soft_size = 0.05
     obj = bpy.data.objects.new(light.name, light)
     obj.location = to_blender(s['pos'])
@@ -97,16 +99,21 @@ world = bpy.data.worlds.new('sky')
 scene.world = world
 world.use_nodes = True
 wn = world.node_tree.nodes
-env = wn.new('ShaderNodeTexEnvironment')
-env.image = bpy.data.images.load(HDRI)
-mapping = wn.new('ShaderNodeMapping')
-mapping.inputs['Rotation'].default_value[2] = math.pi
-coord = wn.new('ShaderNodeTexCoord')
-links = world.node_tree.links
-links.new(coord.outputs['Generated'], mapping.inputs['Vector'])
-links.new(mapping.outputs['Vector'], env.inputs['Vector'])
-links.new(env.outputs['Color'], wn['Background'].inputs['Color'])
-wn['Background'].inputs['Strength'].default_value = 1.0
+if NIGHT:
+    # Đêm: trời xanh thẫm rất mờ (ánh trăng), không mặt trời; đèn trong nhà giữ nguyên.
+    wn['Background'].inputs['Color'].default_value = (0.05, 0.08, 0.18, 1)
+    wn['Background'].inputs['Strength'].default_value = 0.08
+else:
+    env = wn.new('ShaderNodeTexEnvironment')
+    env.image = bpy.data.images.load(HDRI)
+    mapping = wn.new('ShaderNodeMapping')
+    mapping.inputs['Rotation'].default_value[2] = math.pi
+    coord = wn.new('ShaderNodeTexCoord')
+    links = world.node_tree.links
+    links.new(coord.outputs['Generated'], mapping.inputs['Vector'])
+    links.new(mapping.outputs['Vector'], env.inputs['Vector'])
+    links.new(env.outputs['Color'], wn['Background'].inputs['Color'])
+    wn['Background'].inputs['Strength'].default_value = 1.0
 
 # ── Bake
 scene.render.engine = 'CYCLES'
@@ -137,7 +144,7 @@ bpy.ops.object.bake(type='DIFFUSE', pass_filter={'DIRECT', 'INDIRECT'}, margin=2
 print(f'Bake xong sau {time.time() - t0:.0f} s')
 
 # ── Khử nhiễu bằng OIDN (node Denoise của compositor) trên một scene rỗng: render cảnh rỗng rồi ghép ảnh.
-raw = os.path.join(BAKE, 'lightmap_raw.exr')
+raw = os.path.join(BAKE, f'{NAME}_raw.exr')
 image.filepath_raw = raw
 image.file_format = 'OPEN_EXR'
 image.save()
@@ -148,7 +155,7 @@ comp.render.resolution_x = comp.render.resolution_y = SIZE
 comp.render.resolution_percentage = 100
 comp.render.image_settings.file_format = 'OPEN_EXR'
 comp.render.image_settings.color_depth = '32'
-comp.render.filepath = os.path.join(BAKE, 'lightmap_denoised.exr')
+comp.render.filepath = os.path.join(BAKE, f'{NAME}_denoised.exr')
 comp.use_nodes = True
 tree = comp.node_tree
 for n in list(tree.nodes):
@@ -165,12 +172,12 @@ bpy.ops.render.render(scene=comp.name, write_still=True)
 clean = bpy.data.images.load(comp.render.filepath)
 print('Đã khử nhiễu')
 
-# ── Lưu: chia cho scale (phân vị 99,7), mã hóa sRGB 8 bit, WebP.
+# ── Lưu: chia cho scale (phân vị 99,95 — giữ vùng sáng dưới đèn rọi, không cắt trắng), mã hóa sRGB 8 bit, WebP.
 px = np.empty(SIZE * SIZE * 4, dtype=np.float32)
 clean.pixels.foreach_get(px)
 px = px.reshape(SIZE, SIZE, 4)
 lit = px[..., :3].max(axis=2)
-scale = float(np.percentile(lit[lit > 0], 99.7))
+scale = float(np.percentile(lit[lit > 0], 99.95))
 rgb = np.clip(px[..., :3] / scale, 0, 1)
 rgb = np.where(rgb <= 0.0031308, rgb * 12.92, 1.055 * np.power(rgb, 1 / 2.4) - 0.055)
 out = bpy.data.images.new('lightmap_out', SIZE, SIZE, alpha=False)
@@ -178,8 +185,8 @@ out.colorspace_settings.name = 'Non-Color'
 px[..., :3] = rgb
 px[..., 3] = 1
 out.pixels.foreach_set(px.ravel())
-out.filepath_raw = os.path.join(OUT, 'lightmap.webp')
+out.filepath_raw = os.path.join(OUT, f'{NAME}.webp')
 out.file_format = 'WEBP'
 out.save(quality=92)
-json.dump({'scale': round(scale, 4), 'samples': SAMPLES}, open(os.path.join(OUT, 'lightmap.json'), 'w'))
-print('lightmap.webp', os.path.getsize(out.filepath_raw) // 1024, 'KB, scale', scale)
+json.dump({'scale': round(scale, 4), 'samples': SAMPLES}, open(os.path.join(OUT, f'{NAME}.json'), 'w'))
+print(f'{NAME}.webp', os.path.getsize(out.filepath_raw) // 1024, 'KB, scale', scale)

@@ -17,5 +17,8 @@ export function shuffleOptions(question: QuizQuestion, rng: () => number): Shuff
   return { question, options: order.map((i) => question.options[i]), answer: order.indexOf(question.answer) };
 }
 
+/** Hiện vật đang được gợi ý xem lại (FR-17) — chỉ giữ trong phiên (FSD mục 4); xóa khi người chơi mở lại hiện vật. */
+export const hints = new Set<string>();
+
 /** Một lượt: câu theo thứ tự cố định, phương án xáo mỗi lượt. */
 export const startSession = (questions: QuizQuestion[], rng: () => number) => questions.map((q) => shuffleOptions(q, rng));

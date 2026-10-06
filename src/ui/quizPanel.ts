@@ -1,6 +1,6 @@
 import { exhibit, quizFor, room, roomNo } from '../content';
 import type { RoomId } from '../content/types';
-import { startSession, type ShuffledQuestion } from '../quiz/session';
+import { hints, startSession, type ShuffledQuestion } from '../quiz/session';
 import type { ProgressStore } from '../storage/progress';
 import { h, openOverlay } from './dom';
 
@@ -95,7 +95,7 @@ export function showQuizPanel(ui: HTMLElement, roomId: RoomId, progress: Progres
       selectByKey = null;
       const ok = pick === q.answer;
       if (ok) correct++;
-      else q.question.exhibitIds.forEach((id) => review.add(id));
+      else q.question.exhibitIds.forEach((id) => (review.add(id), hints.add(id)));
       radios.forEach((x, i) => {
         x.input.disabled = true;
         if (i === q.answer) x.label.classList.add('correct');

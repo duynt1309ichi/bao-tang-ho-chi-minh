@@ -12,6 +12,7 @@ const SHADOW_HALF = 12; // vùng đổ bóng 24 × 24 m quanh người chơi
 const LIGHT_DIST = 20;
 const SPOT_RANGE = 6; // đèn rọi đổ bóng chỉ bật khi người chơi cách chóa ≤ 6 m
 const SPOT_INTENSITY = 12;
+const NIGHT_FOG = '#0b1426';
 
 /**
  * Ánh sáng runtime. Kiến trúc tĩnh đã có lightmap bake (ánh sáng trực tiếp + gián tiếp); đèn ở đây
@@ -57,9 +58,35 @@ export function setupEnvironment(scene: THREE.Scene, renderer: THREE.WebGLRender
   spot.shadow.camera.near = 0.3;
   scene.add(spot, spot.target);
 
+  // Sương chỉ dày lên ban đêm (FR-23); ban ngày đẩy ra rất xa nên coi như không có.
+  const fog = new THREE.Fog(NIGHT_FOG, 1e4, 2e4);
+  scene.fog = fog;
+  const DAY_SUN = new THREE.Color('#fff1dc'), MOON = new THREE.Color('#9fb4ff');
+
   const texel = (SHADOW_HALF * 2) / 1024;
   let current: Spot | null = null;
+  let night = 0, indoor = 0;
+  const applySun = () => {
+    // Trong nhà có trần: nắng/trăng chỉ còn đủ tạo bóng mờ (lightmap đã có ánh sáng), tránh lóa trên sàn gỗ.
+    light.intensity = THREE.MathUtils.lerp(0.6, 0.15, night) * THREE.MathUtils.lerp(1, 0.2, indoor);
+    // Đêm chỉ tối ngoài trời; trong nhà đèn vẫn bật nên vật thể động giữ IBL gần như ban ngày.
+    scene.environmentIntensity = THREE.MathUtils.lerp(0.5, THREE.MathUtils.lerp(0.08, 0.45, indoor), night);
+  };
   return {
+    /** Người chơi đang trong nhà (1) hay ngoài khuôn viên (0); gọi mỗi khung, tự làm mượt. */
+    setIndoor(target: boolean, dt: number) {
+      indoor += ((target ? 1 : 0) - indoor) * Math.min(1, dt * 3);
+      applySun();
+    },
+    /** 0 = ngày, 1 = đêm; gọi mỗi khung trong lúc chuyển (≤ 2 s). */
+    setNight(k: number) {
+      night = k;
+      scene.backgroundIntensity = THREE.MathUtils.lerp(1, 0.05, k);
+      applySun();
+      light.color.lerpColors(DAY_SUN, MOON, k);
+      fog.near = THREE.MathUtils.lerp(1e4, 25, k);
+      fog.far = THREE.MathUtils.lerp(2e4, 140, k);
+    },
     /** Đặt vùng bóng quanh người chơi; làm tròn theo texel để bóng không rung. Chọn chóa đèn rọi gần nhất. */
     follow(feet: THREE.Vector3, dt: number) {
       const x = Math.round(feet.x / texel) * texel;

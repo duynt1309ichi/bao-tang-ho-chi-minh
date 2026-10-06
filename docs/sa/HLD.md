@@ -72,7 +72,7 @@ Quy tắc phụ thuộc: `content` và `storage` không phụ thuộc module nà
 | `exhibits` | Đặt hiện vật theo `layout.json`, chọn hiện vật mục tiêu (BR-S09), chế độ xem cận, khuôn chung + 13 module 🎛 | three | Trạng thái 🎛 đang mở | FR-12 → FR-14 |
 | `quiz` | Trạm trắc nghiệm: xáo phương án, chấm, giải thích, gợi ý xem lại | TS | Lượt đang làm | FR-16, FR-17 |
 | `ui` | HUD, bản đồ nhỏ, popup vào phòng, bảng hiện vật, menu tạm dừng, cài đặt, hướng dẫn, màn hoàn thành, nguồn & giấy phép, thông báo | HTML/CSS | — | FR-03, FR-09 → FR-11, FR-18, FR-20 → FR-22, FR-25, FR-27 |
-| `audio` | Nhạc nền, bước chân, hiệu ứng; mở khóa sau thao tác đầu tiên; dừng khi ẩn tab | Web Audio (qua three `AudioListener`) | — | FR-24 |
+| `audio` | Nhạc nền, bước chân, hiệu ứng; mở khóa sau thao tác đầu tiên; dừng khi ẩn tab | Web Audio — **tổng hợp lúc chạy** (oscillator + nhiễu lọc, cập nhật M4): không có file âm thanh nên không tốn tải, không cần credits | — | FR-24 |
 | `storage` | Đọc/validate/ghi `bttr.progress.v1`, `bttr.settings.v1`; chế độ bộ nhớ tạm khi bị chặn | TS | Progress, Settings | FR-15, FR-19, FR-20 |
 | `content` | `layout.json` (phòng, cửa, vị trí hiện vật, trạm trắc nghiệm), `exhibits.ts`, `quiz.ts`, `credits` | TS/JSON | Room, Exhibit, QuizQuestion, Credit | FR-08, FR-13, FR-16, FR-27 |
 | `scripts/validate-content.ts` | Kiểm tra toàn vẹn dữ liệu trước khi build | Node 24 | — | FR-26 |

@@ -5,10 +5,10 @@ export const QUALITIES: readonly Quality[] = ['low', 'medium', 'high'];
 export const QUALITY_LABEL: Record<Quality, string> = { low: 'Thấp', medium: 'Trung bình', high: 'Cao' };
 
 /** HLD 7.3. Lightmap bake dùng ở mọi mức. */
-export const PRESETS: Record<Quality, { pixelRatio: number; texture: '1k' | '2k'; shadowMap: number; spotShadow: boolean; post: boolean; ao: boolean; vignette: boolean }> = {
-  low: { pixelRatio: 1, texture: '1k', shadowMap: 0, spotShadow: false, post: false, ao: false, vignette: false },
-  medium: { pixelRatio: 1.5, texture: '1k', shadowMap: 1024, spotShadow: false, post: true, ao: false, vignette: false },
-  high: { pixelRatio: 2, texture: '2k', shadowMap: 2048, spotShadow: true, post: true, ao: true, vignette: true },
+export const PRESETS: Record<Quality, { pixelRatio: number; texture: '1k' | '2k'; shadowMap: number; spotShadow: boolean; post: boolean; ao: boolean; vignette: boolean; fireworks: number }> = {
+  low: { pixelRatio: 1, texture: '1k', shadowMap: 0, spotShadow: false, post: false, ao: false, vignette: false, fireworks: 0.25 },
+  medium: { pixelRatio: 1.5, texture: '1k', shadowMap: 1024, spotShadow: false, post: true, ao: false, vignette: false, fireworks: 0.6 },
+  high: { pixelRatio: 2, texture: '2k', shadowMap: 2048, spotShadow: true, post: true, ao: true, vignette: true, fireworks: 1 },
 };
 
 /** BR-S12: cảm ứng → Thấp, còn lại → Trung bình; Cao chỉ khi người dùng chọn. Hàm thuần. */

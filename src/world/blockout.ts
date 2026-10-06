@@ -95,17 +95,47 @@ export function buildBlockout(layout: Layout) {
      * (three chia π trong BRDF Lambert). IBL trên mặt đã bake chỉ còn phần phản chiếu nhẹ.
      */
     async loadLightmap() {
-      const [tex, meta] = await Promise.all([load('/assets/lightmap.webp'), fetch('/assets/lightmap.json').then((r) => r.json() as Promise<{ scale: number }>)]);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.channel = 1;
+      const [[day, dayScale], [night, nightScale]] = await Promise.all([lightmap('lightmap'), lightmap('lightmap_night')]);
+      nightUniforms.nightMap.value = night;
+      nightUniforms.nightIntensity.value = nightScale * Math.PI * LIGHTMAP_EXPOSURE;
       for (const mat of baked) {
-        mat.lightMap = tex;
-        mat.lightMapIntensity = meta.scale * Math.PI * LIGHTMAP_EXPOSURE;
+        mat.lightMap = day;
+        mat.lightMapIntensity = dayScale * Math.PI * LIGHTMAP_EXPOSURE;
         mat.envMapIntensity = 0.25;
+        mat.onBeforeCompile = blendNight;
+        mat.customProgramCacheKey = () => 'night-lightmap';
         mat.needsUpdate = true;
       }
     },
+    /** 0 = ngày, 1 = đêm (FR-23): trộn lightmap ngày với lightmap đêm (chỉ đèn trong nhà + trăng). */
+    set night(k: number) {
+      nightUniforms.uNight.value = k;
+    },
   };
+}
+
+async function lightmap(name: string) {
+  const [tex, meta] = await Promise.all([load(`/assets/${name}.webp`), fetch(`/assets/${name}.json`).then((r) => r.json() as Promise<{ scale: number }>)]);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.channel = 1;
+  return [tex, meta.scale] as const;
+}
+
+const nightUniforms = { nightMap: { value: null as THREE.Texture | null }, nightIntensity: { value: 1 }, uNight: { value: 0 } };
+const LIGHTMAP_LINE = 'vec3 lightMapIrradiance = lightMapTexel.rgb * lightMapIntensity;';
+
+/** Vá shader chuẩn: lightmap = trộn(ngày, đêm, uNight). Dùng chung uniform nên đổi một lần cho mọi vật liệu. */
+function blendNight(shader: THREE.WebGLProgramParametersWithUniforms) {
+  if (!THREE.ShaderChunk.lights_fragment_maps.includes(LIGHTMAP_LINE)) throw new Error('three đổi shader lightmap — cập nhật blendNight');
+  Object.assign(shader.uniforms, nightUniforms);
+  const chunk = THREE.ShaderChunk.lights_fragment_maps.replace(
+    LIGHTMAP_LINE,
+    'vec3 lightMapIrradiance = mix( lightMapTexel.rgb * lightMapIntensity, texture2D( nightMap, vLightMapUv ).rgb * nightIntensity, uNight );',
+  );
+  shader.fragmentShader = `uniform sampler2D nightMap;
+uniform float nightIntensity;
+uniform float uNight;
+${shader.fragmentShader.replace('#include <lights_fragment_maps>', chunk)}`;
 }
 
 /** Bù độ sáng giữa đơn vị đèn Blender (W) và cảnh runtime; chỉnh bằng mắt. */

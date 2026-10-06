@@ -20,3 +20,15 @@ export const roomNo = (id: RoomId) => `Phòng ${id.slice(1)}`;
 export function formatPages(ranges: PageRange[]): string {
   return ranges.map(([a, b]) => (a === b ? `${a}` : `${a}–${b}`)).join(', ');
 }
+
+export interface RoomMarks {
+  done: boolean; // ✓ khám phá đủ
+  mastered: boolean; // ★ đã nắm vững
+  hinted: boolean; // ◎ có hiện vật đang được gợi ý xem lại
+}
+
+/** Dấu ✓ ★ ◎ của một phòng (BR-S08, FR-17). Hàm thuần. */
+export function roomMarks(room: RoomId, explored: ReadonlySet<string>, mastered: boolean, hints: ReadonlySet<string>): RoomMarks {
+  const ids = exhibitsIn(room).map((e) => e.id);
+  return { done: ids.every((id) => explored.has(id)), mastered, hinted: ids.some((id) => hints.has(id)) };
+}

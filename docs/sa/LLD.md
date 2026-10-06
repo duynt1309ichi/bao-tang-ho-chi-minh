@@ -153,7 +153,7 @@ Trường settings sai kiểu → dùng mặc định **riêng trường đó** 
 | `world/zones.ts` | Tải GLB theo khu, gán lightmap, gộp collider | `loadZone(z)`, `preloadZones()`, `collider: MeshBVH`, `areaAt(pos): AreaId` | loader, three-mesh-bvh | FR-01, FR-08 |
 | `world/blockout.ts` | Sinh khối hộp từ `layout.json` khi chưa có GLB | `buildBlockout(layout, zone): Group` | three | FR-08 (ADR-04) |
 | `world/doors.ts` | Vùng kích hoạt ngưỡng cửa, cửa khu chưa tải | `doorCrossed(prevPos, pos): { room, entering } \| null` **(thuần)** | layout | FR-09 |
-| `world/dayNight.ts`, `world/fireworks.ts` | Chuyển ngày/đêm ≤ 2s; pháo hoa `Points` | `dayNight.set(night)`, `toggle()`; `fireworks.setDensity(q)` | three | FR-23 |
+| `world/environment.ts` (ngày/đêm), `world/fireworks.ts` | Chuyển ngày/đêm 1,5 s: trời, đèn, IBL, sương; trộn lightmap ngày/đêm (`blockout.night = k`, shader vá trong `world/blockout.ts`); pháo hoa `Points` | `env.setNight(k)`, `env.setIndoor(b, dt)`; `fireworks.density = PRESETS[q].fireworks`, `fireworks.update(dt, active, listener)` | three | FR-23 |
 | `player/character.ts` | Nạp nhân vật, AnimationMixer, cross-fade 0,2 s | `setCharacter(c)`, `play('idle' \| 'walk' \| 'run' \| 'look' \| 'interact')` | three | FR-02, FR-04 |
 | `player/keyboardInput.ts`, `player/touchInput.ts` | Thu điều khiển thành vector chung | `input.move: {x, z}`, `input.run`, `input.look: {dx, dy}`, `input.zoom`; `normalizeMove(keys)` **(thuần)** | — | FR-04, FR-06 |
 | `player/collision.ts` | Viên nang 0,3 × 1,7 m với BVH, trượt theo tường | `resolveCapsule(capsule, bvh): Vector3` | three-mesh-bvh | FR-07 |

@@ -6,12 +6,14 @@ import '@fontsource/be-vietnam-pro/600.css';
 import '@fontsource/be-vietnam-pro/700.css';
 import './ui/tokens.css';
 import './ui/base.css';
+import { audio } from './audio';
 import { exhibit, exhibits, quiz, roomNo, rooms } from './content';
 import type { AreaId, RoomId } from './content/types';
 import { Graphics } from './core/graphics';
 import { stepsFor } from './core/loop';
 import { FpsMonitor, lower, PRESETS, QUALITY_LABEL, type Quality } from './core/quality';
 import { pickTarget } from './exhibits/proximity';
+import { hints } from './quiz/session';
 import { CameraFly, FollowCamera } from './player/camera';
 import { DesktopInput } from './player/input';
 import { Player } from './player/player';
@@ -20,15 +22,17 @@ import { ProgressStore } from './storage/progress';
 import { clampSensitivity, SettingsStore } from './storage/settings';
 import { showCompletion } from './ui/completion';
 import { createToasts, h, overlayOpen, reducedMotion } from './ui/dom';
+import { createMinimap } from './ui/minimap';
 import { showExhibitPanel } from './ui/exhibitPanel';
 import { showPauseMenu } from './ui/pauseMenu';
 import { showQuizPanel } from './ui/quizPanel';
 import { showTutorial } from './ui/tutorial';
 import { buildBlockout } from './world/blockout';
 import { setupEnvironment } from './world/environment';
+import { createFireworks } from './world/fireworks';
 import { areaAt, areaName, layout } from './world/layout';
 
-// Mốc M3: blockout có vật liệu, pano chữ, bầu trời + IBL, hậu kỳ và mức chất lượng (FR-22).
+// Mốc M4: hiện vật tương tác 🎛, ngày/đêm + pháo hoa, âm thanh, bản đồ nhỏ — trên nền đồ họa M3.
 const canvas = document.querySelector<HTMLCanvasElement>('#scene')!;
 const ui = document.querySelector<HTMLDivElement>('#ui')!;
 
@@ -60,8 +64,10 @@ function start() {
   scene.add(museum.group);
   const env = setupEnvironment(scene, gfx.renderer, sun, spot, museum.spots);
   museum.loadLightmap().catch((e) => console.error('Không tải được lightmap', e));
+  const fireworks = createFireworks(scene);
   const applyQuality = (q: Quality, announce = false) => {
     gfx.apply(q);
+    fireworks.density = PRESETS[q].fireworks;
     const loading = museum.setTextureSize(PRESETS[q].texture);
     if (announce && PRESETS[q].texture === '2k') {
       toast('Đang tải texture chất lượng cao…');
@@ -96,10 +102,15 @@ function start() {
   const count = h('span');
   const hud = h('div', { class: 'hud' }, areaLabel, h('div', { class: 'hud-progress' }, bar, count));
   const prompt = h('div', { class: 'hud-prompt', hidden: '' });
-  const hint = h('div', { class: 'hud-hint' }, 'Bấm vào màn hình để điều khiển camera · WASD: đi · Shift: chạy · E: xem · Cuộn: zoom · V: đổi góc nhìn');
+  const hint = h('div', { class: 'hud-hint' }, 'Bấm vào màn hình để điều khiển camera · WASD: đi · Shift: chạy · E: xem · Cuộn: zoom · V: đổi góc nhìn · N: ngày/đêm · M: bản đồ');
+  const soundBtn = h('button', { class: 'icon-btn', 'aria-label': 'Âm thanh' });
+  const nightBtn = h('button', { class: 'icon-btn', 'aria-label': 'Ngày / đêm (N)' });
   const helpBtn = h('button', { class: 'icon-btn', 'aria-label': 'Hướng dẫn' }, '?');
+  const fullBtn = h('button', { class: 'icon-btn', 'aria-label': 'Toàn màn hình' }, '⛶');
+  fullBtn.hidden = !document.fullscreenEnabled;
   const menuBtn = h('button', { class: 'icon-btn', 'aria-label': 'Menu' }, '☰');
-  const hudRight = h('div', { class: 'hud-right' }, helpBtn, menuBtn);
+  const minimap = createMinimap(layout, progress, hints);
+  const hudRight = h('div', { class: 'hud-right' }, h('div', { class: 'hud-buttons' }, soundBtn, nightBtn, helpBtn, fullBtn, menuBtn), minimap.el);
   ui.replaceChildren(hud, hudRight, h('div', { class: 'hud-bottom' }, prompt, hint));
   const toast = createToasts(ui);
 
@@ -151,6 +162,7 @@ function start() {
     player.visible = false;
     fly.start(camera, flyTime(0.8));
     const isNew = progress.markExplored(e.id); // BR-S01: tính ngay khi mở
+    hints.delete(e.id); // FR-17: đã xem lại thì bỏ ◎
     showExhibitPanel(ui, e, () => {
       viewing = null;
       player.visible = !follow.firstPerson;
@@ -181,6 +193,10 @@ function start() {
       },
       setSensitivity: (v) => settings.update({ sensitivity: (follow.sensitivity = clampSensitivity(v)) }),
       setInvertY: (v) => settings.update({ invertY: (follow.invertY = v) }),
+      setVolumes: (music, sfx) => {
+        settings.update({ volumeMusic: music, volumeSfx: sfx });
+        audio.setVolumes(music, sfx);
+      },
       isTouch,
       toLobby: () => {
         player.teleport(layout.spawns.lobby);
@@ -211,6 +227,61 @@ function start() {
     if (e.key === 'Escape' && !e.defaultPrevented && !overlayOpen()) openMenu(); // ESC vừa đóng một lớp thì thôi
   });
 
+  // Âm thanh (FR-24): chỉ bật sau thao tác đầu tiên; nút loa bật/tắt toàn bộ, lưu `muted`.
+  audio.setVolumes(settings.value.volumeMusic, settings.value.volumeSfx);
+  audio.setMuted(settings.value.muted);
+  for (const ev of ['pointerdown', 'keydown'] as const) addEventListener(ev, () => audio.unlock(), { capture: true });
+  const renderSound = () => {
+    soundBtn.textContent = settings.value.muted ? '🔇' : '🔊';
+    soundBtn.setAttribute('aria-pressed', String(settings.value.muted));
+  };
+  soundBtn.addEventListener('click', () => {
+    settings.update({ muted: !settings.value.muted });
+    audio.setMuted(settings.value.muted);
+    renderSound();
+  });
+  renderSound();
+
+  // Ngày/đêm (FR-23): N hoặc nút ☀/☾; chuyển trong 1,5 s; lưu `night`.
+  let nightK = settings.value.night ? 1 : 0;
+  const renderNight = () => {
+    nightBtn.textContent = settings.value.night ? '☾' : '☀';
+    nightBtn.setAttribute('aria-pressed', String(settings.value.night));
+  };
+  const toggleNight = () => {
+    settings.update({ night: !settings.value.night });
+    renderNight();
+  };
+  nightBtn.addEventListener('click', toggleNight);
+  renderNight();
+
+  // Bản đồ (FR-10): bấm bản đồ nhỏ hoặc M → SCR-09.
+  const openMap = () => {
+    if (overlayOpen()) return;
+    input.enabled = false;
+    minimap.openLarge({ x: player.feet.x, z: player.feet.z, yaw: player.object.rotation.y }, resume);
+  };
+  minimap.el.addEventListener('click', openMap);
+  minimap.el.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') openMap();
+  });
+  fullBtn.addEventListener('click', () => (document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen()).catch(() => {}));
+  addEventListener('keydown', (e) => {
+    if (overlayOpen() || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.code === 'KeyN') toggleNight();
+    if (e.code === 'KeyM') openMap();
+  });
+
+  // Tiếng bước chân theo nhịp đi/chạy, âm sắc theo mặt sàn.
+  let stepTimer = 0;
+  const surfaceAt = (x: number, z: number, a: AreaId | null) => {
+    if (a === 'courtyard') return Math.abs(z) < 1.5 ? 'stone' : 'soft';
+    const r = layout.areas.find((v) => v.id === a);
+    if (!r?.zone) return 'stone';
+    const [rx, rz, w, d] = r.rect;
+    return x > rx + 1.5 && x < rx + w - 1.5 && z > rz + 1.5 && z < rz + d - 1.5 ? 'soft' : 'wood';
+  };
+
   // Tự hạ chất lượng một lần mỗi phiên khi FPS < 25 trong 5 s chơi liên tục (BR-S12, MSG-09).
   const fps = new FpsMonitor();
   let downgraded = false;
@@ -227,7 +298,7 @@ function start() {
   };
 
   // Móc kiểm thử tay trong dev (không có trong bản build).
-  if (import.meta.env.DEV) Object.assign(window, { __museum: { player, follow, bvh, progress, gfx, settings, fps } });
+  if (import.meta.env.DEV) Object.assign(window, { __museum: { player, follow, bvh, progress, gfx, settings, fps, audio, env, museum, fireworks } });
 
   let area: AreaId | null = null;
   const forward = new THREE.Vector3();
@@ -293,7 +364,21 @@ function start() {
       area = here;
       areaLabel.textContent = areaName(here);
     }
-    env.follow(player.feet, Math.min(elapsed, 0.1));
+    const dt = Math.min(elapsed, 0.1);
+    env.follow(player.feet, dt);
+    const nightTarget = settings.value.night ? 1 : 0;
+    if (nightK !== nightTarget) nightK = nightTarget > nightK ? Math.min(1, nightK + dt / 1.5) : Math.max(0, nightK - dt / 1.5);
+    env.setNight(nightK);
+    env.setIndoor(area !== 'courtyard', dt);
+    museum.night = nightK;
+    fireworks.update(dt, nightK > 0.6, player.feet);
+    minimap.update(now, { x: player.feet.x, z: player.feet.z, yaw: player.object.rotation.y });
+    const moving = playing && (input.move.right !== 0 || input.move.forward !== 0);
+    stepTimer = moving ? stepTimer - dt : 0;
+    if (moving && stepTimer <= 0) {
+      audio.footstep(surfaceAt(player.feet.x, player.feet.z, area));
+      stepTimer = input.run ? 0.32 : 0.5;
+    }
     watchFps(elapsed, playing);
     gfx.render();
   });
