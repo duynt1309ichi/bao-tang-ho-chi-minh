@@ -119,6 +119,18 @@ export class ProgressStore {
     this.save();
   }
 
+  setTutorialSeen() {
+    this.value.tutorialSeen = true;
+    this.save();
+  }
+
+  /** FR-20: xóa toàn bộ tiến độ (cài đặt giữ nguyên). */
+  reset() {
+    kv.remove(PROGRESS_KEY);
+    this.value = emptyProgress();
+    this.onChange();
+  }
+
   private save() {
     kv.set(PROGRESS_KEY, JSON.stringify(this.value));
     this.onChange();

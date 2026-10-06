@@ -4,11 +4,11 @@ export type Quality = 'low' | 'medium' | 'high';
 export const QUALITIES: readonly Quality[] = ['low', 'medium', 'high'];
 export const QUALITY_LABEL: Record<Quality, string> = { low: 'Thấp', medium: 'Trung bình', high: 'Cao' };
 
-/** HLD 7.3. `texture`: cạnh texture thủ tục (px) — Thấp 512 để vẽ nhanh trên điện thoại. */
-export const PRESETS: Record<Quality, { pixelRatio: number; texture: number; shadowMap: number; post: boolean; ao: boolean; vignette: boolean }> = {
-  low: { pixelRatio: 1, texture: 512, shadowMap: 0, post: false, ao: false, vignette: false },
-  medium: { pixelRatio: 1.5, texture: 1024, shadowMap: 1024, post: true, ao: false, vignette: false },
-  high: { pixelRatio: 2, texture: 1024, shadowMap: 2048, post: true, ao: true, vignette: true },
+/** HLD 7.3. Lightmap bake dùng ở mọi mức. */
+export const PRESETS: Record<Quality, { pixelRatio: number; texture: '1k' | '2k'; shadowMap: number; spotShadow: boolean; post: boolean; ao: boolean; vignette: boolean }> = {
+  low: { pixelRatio: 1, texture: '1k', shadowMap: 0, spotShadow: false, post: false, ao: false, vignette: false },
+  medium: { pixelRatio: 1.5, texture: '1k', shadowMap: 1024, spotShadow: false, post: true, ao: false, vignette: false },
+  high: { pixelRatio: 2, texture: '2k', shadowMap: 2048, spotShadow: true, post: true, ao: true, vignette: true },
 };
 
 /** BR-S12: cảm ứng → Thấp, còn lại → Trung bình; Cao chỉ khi người dùng chọn. Hàm thuần. */

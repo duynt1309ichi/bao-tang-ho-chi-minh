@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { Exhibit, ExhibitKind, Room } from '../content/types';
+import type { Exhibit, ExhibitKind, Layout, Room } from '../content/types';
 import { ZONE_COLORS } from '../ui/tokens';
 
 // Chữ trên pano, biển phòng vẽ bằng Canvas 2D lúc chạy (HLD ADR-06). Màu theo design.md mục 2:
@@ -116,11 +116,13 @@ export function signAtlas(entries: { kicker: string; title: string; color: strin
     });
     tex.needsUpdate = true;
   });
-  const rect = (i: number): [number, number, number, number] => {
-    const col = i % 2, row = Math.floor(i / 2);
-    return [col / 2, 1 - (row + 1) / 8, (col + 1) / 2, 1 - row / 8];
-  };
-  return { tex, rect };
+  return tex;
+}
+
+/** UV ô thứ i trong atlas biển phòng (2 cột × 8 hàng). Hàm thuần. */
+export function signRect(i: number): [number, number, number, number] {
+  const col = i % 2, row = Math.floor(i / 2);
+  return [col / 2, 1 - (row + 1) / 8, (col + 1) / 2, 1 - row / 8];
 }
 
 /** Pano chào ở sảnh (SRS BR-S07, NOI_DUNG.md mục Sảnh). Tỉ lệ 2 : 1. */
@@ -158,4 +160,96 @@ let fonts: Promise<unknown> | null = null;
 function whenFonts(draw: () => void) {
   fonts ??= Promise.all(['400', '600', '700', 'italic 400'].map((w) => document.fonts.load(`${w} 20px "Be Vietnam Pro"`, 'Ạ'))).catch(() => {});
   fonts.then(draw);
+}
+
+/** Một tấm bảng tối có viền đồng; `draw` vẽ nội dung sau khi font tải xong. */
+function panel(W: number, H: number, draw: (ctx: CanvasRenderingContext2D) => void) {
+  const canvas = Object.assign(document.createElement('canvas'), { width: W, height: H });
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  whenFonts(() => {
+    const ctx = canvas.getContext('2d')!;
+    ctx.fillStyle = BG;
+    ctx.fillRect(0, 0, W, H);
+    ctx.strokeStyle = ACCENT;
+    ctx.lineWidth = 4;
+    ctx.strokeRect(20, 20, W - 40, H - 40);
+    ctx.textBaseline = 'top';
+    draw(ctx);
+    tex.needsUpdate = true;
+  });
+  return tex;
+}
+
+/** Sơ đồ bảo tàng ở sảnh (BR-S07): 3 khu theo 3 chương, 10 phòng, phòng ôn tập cuối hành lang. */
+export function museumMapPanel(layout: Layout, rooms: Room[]) {
+  const W = 1500, H = 900;
+  return panel(W, H, (ctx) => {
+    ctx.fillStyle = ACCENT;
+    ctx.font = `700 48px ${FONT}`;
+    ctx.fillText('SƠ ĐỒ BẢO TÀNG', 60, 50);
+    const areas = layout.areas.filter((a) => !a.outdoor);
+    const minX = Math.min(...areas.map((a) => a.rect[0])), maxX = Math.max(...areas.map((a) => a.rect[0] + a.rect[2]));
+    const minZ = Math.min(...areas.map((a) => a.rect[1])), maxZ = Math.max(...areas.map((a) => a.rect[1] + a.rect[3]));
+    const s = Math.min((W - 120) / (maxX - minX), (H - 300) / (maxZ - minZ));
+    const ox = 60, oz = 140;
+    for (const a of areas) {
+      const [x, z, w, d] = a.rect;
+      const room = rooms.find((r) => r.id === a.id);
+      ctx.fillStyle = room ? ZONE_COLORS[room.zone] : a.id === 'review' ? '#3e5c4a' : '#4a443a';
+      const px = ox + (x - minX) * s, pz = oz + (z - minZ) * s;
+      ctx.fillRect(px + 2, pz + 2, w * s - 4, d * s - 4);
+      ctx.fillStyle = INK;
+      ctx.font = `700 ${room ? 30 : 24}px ${FONT}`;
+      const label = room ? room.id : a.id === 'lobby' ? 'Sảnh' : a.id === 'review' ? 'Ôn tập' : 'Hành lang';
+      ctx.fillText(label, px + 12, pz + (a.id === 'hallway' ? (d * s - 24) / 2 : 12));
+      if (a.id === 'lobby') {
+        ctx.fillStyle = ACCENT;
+        ctx.font = `600 22px ${FONT}`;
+        ctx.fillText('▲ Bạn đang ở đây', px + 12, pz + d * s - 40);
+      }
+    }
+    const legend: [string, string][] = [
+      [ZONE_COLORS.A, 'Khu A · Chương 1 — Khái luận về triết học và triết học Mác – Lênin'],
+      [ZONE_COLORS.B, 'Khu B · Chương 2 — Chủ nghĩa duy vật biện chứng'],
+      [ZONE_COLORS.C, 'Khu C · Chương 3 — Chủ nghĩa duy vật lịch sử'],
+    ];
+    ctx.font = `400 26px ${FONT}`;
+    legend.forEach(([c, t], i) => {
+      const y = H - 150 + i * 38;
+      ctx.fillStyle = c;
+      ctx.fillRect(60, y, 28, 28);
+      ctx.fillStyle = INK;
+      ctx.fillText(t, 104, y);
+    });
+  });
+}
+
+/** Bảng "Về giáo trình" (SRS FR-27 a). Dùng chung câu chữ với SCR-14. */
+export const ABOUT_BOOK = {
+  title: 'Giáo trình Triết học Mác – Lênin',
+  lines: ['(Dành cho bậc đại học hệ không chuyên lý luận chính trị)', 'Bộ Giáo dục và Đào tạo', 'Nhà xuất bản Chính trị quốc gia Sự thật, Hà Nội, 2021'],
+  note: 'Nội dung trưng bày là bản tóm tắt phục vụ ôn tập; khi học hãy đối chiếu giáo trình.',
+};
+
+export function aboutPanel() {
+  const W = 1500, H = 1000;
+  return panel(W, H, (ctx) => {
+    const m = (s: string) => ctx.measureText(s).width;
+    ctx.fillStyle = ACCENT;
+    ctx.font = `700 48px ${FONT}`;
+    ctx.fillText('VỀ GIÁO TRÌNH', 80, 80);
+    ctx.fillStyle = INK;
+    ctx.font = `700 64px ${FONT}`;
+    let y = fillLines(ctx, wrapText(m, ABOUT_BOOK.title, W - 160), 80, 170, 80) + 30;
+    ctx.font = `400 40px ${FONT}`;
+    ctx.fillStyle = MUTED;
+    for (const l of ABOUT_BOOK.lines) y = fillLines(ctx, wrapText(m, l, W - 160), 80, y, 54) + 6;
+    ctx.fillStyle = ACCENT;
+    ctx.fillRect(80, y + 30, 80, 4);
+    ctx.fillStyle = INK;
+    ctx.font = `italic 400 40px ${FONT}`;
+    fillLines(ctx, wrapText(m, ABOUT_BOOK.note, W - 160), 80, y + 70, 54);
+  });
 }

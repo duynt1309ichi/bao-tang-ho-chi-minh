@@ -17,15 +17,15 @@ import { DesktopInput } from './player/input';
 import { Player } from './player/player';
 import { kv } from './storage/kv';
 import { ProgressStore } from './storage/progress';
-import { SettingsStore } from './storage/settings';
+import { clampSensitivity, SettingsStore } from './storage/settings';
 import { showCompletion } from './ui/completion';
 import { createToasts, h, overlayOpen, reducedMotion } from './ui/dom';
 import { showExhibitPanel } from './ui/exhibitPanel';
 import { showPauseMenu } from './ui/pauseMenu';
 import { showQuizPanel } from './ui/quizPanel';
+import { showTutorial } from './ui/tutorial';
 import { buildBlockout } from './world/blockout';
 import { setupEnvironment } from './world/environment';
-import { repaint } from './world/textures';
 import { areaAt, areaName, layout } from './world/layout';
 
 // Mốc M3: blockout có vật liệu, pano chữ, bầu trời + IBL, hậu kỳ và mức chất lượng (FR-22).
@@ -52,19 +52,29 @@ function start() {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(60, 1, 0.05, 200);
-  const shadowLight = new THREE.DirectionalLight();
-  const gfx = new Graphics(canvas, scene, camera, shadowLight);
-  const env = setupEnvironment(scene, gfx.renderer, shadowLight);
-  const { group, collider, textures } = buildBlockout(layout, PRESETS[settings.value.quality].texture);
-  scene.add(group);
-  const applyQuality = (q: Quality) => {
+  const sun = new THREE.DirectionalLight();
+  const spot = new THREE.SpotLight();
+  const gfx = new Graphics(canvas, scene, camera, sun, spot);
+  const museum = buildBlockout(layout);
+  const { collider } = museum;
+  scene.add(museum.group);
+  const env = setupEnvironment(scene, gfx.renderer, sun, spot, museum.spots);
+  museum.loadLightmap().catch((e) => console.error('Không tải được lightmap', e));
+  const applyQuality = (q: Quality, announce = false) => {
     gfx.apply(q);
-    for (const [name, tex] of textures) repaint(tex, name, PRESETS[q].texture);
+    const loading = museum.setTextureSize(PRESETS[q].texture);
+    if (announce && PRESETS[q].texture === '2k') {
+      toast('Đang tải texture chất lượng cao…');
+      loading.then(() => toast('Đã tải xong texture chất lượng cao.'));
+    }
+    loading.catch((e) => console.error('Không tải được texture', e));
   };
   applyQuality(settings.value.quality);
   const bvh = new MeshBVH(collider);
 
   const follow = new FollowCamera(camera);
+  follow.sensitivity = settings.value.sensitivity;
+  follow.invertY = settings.value.invertY;
   const fly = new CameraFly();
   const player = new Player();
   player.object.traverse((o) => (o.castShadow = true));
@@ -87,8 +97,10 @@ function start() {
   const hud = h('div', { class: 'hud' }, areaLabel, h('div', { class: 'hud-progress' }, bar, count));
   const prompt = h('div', { class: 'hud-prompt', hidden: '' });
   const hint = h('div', { class: 'hud-hint' }, 'Bấm vào màn hình để điều khiển camera · WASD: đi · Shift: chạy · E: xem · Cuộn: zoom · V: đổi góc nhìn');
-  const menuBtn = h('button', { class: 'icon-btn hud-menu', 'aria-label': 'Menu' }, '☰');
-  ui.replaceChildren(hud, menuBtn, h('div', { class: 'hud-bottom' }, prompt, hint));
+  const helpBtn = h('button', { class: 'icon-btn', 'aria-label': 'Hướng dẫn' }, '?');
+  const menuBtn = h('button', { class: 'icon-btn', 'aria-label': 'Menu' }, '☰');
+  const hudRight = h('div', { class: 'hud-right' }, helpBtn, menuBtn);
+  ui.replaceChildren(hud, hudRight, h('div', { class: 'hud-bottom' }, prompt, hint));
   const toast = createToasts(ui);
 
   let warnedStorage = false;
@@ -162,19 +174,36 @@ function start() {
     if (overlayOpen()) return;
     input.enabled = false;
     showPauseMenu(ui, {
-      quality: () => settings.value.quality,
+      settings: () => settings.value,
       setQuality: (q) => {
         settings.update({ quality: q, qualityManual: true });
-        applyQuality(q);
+        applyQuality(q, true);
       },
+      setSensitivity: (v) => settings.update({ sensitivity: (follow.sensitivity = clampSensitivity(v)) }),
+      setInvertY: (v) => settings.update({ invertY: (follow.invertY = v) }),
+      isTouch,
       toLobby: () => {
         player.teleport(layout.spawns.lobby);
         toast('Đã đưa bạn về sảnh.');
       },
+      showCompletion: progress.exploredCount === total ? () => showCompletion(ui, total, () => (player.teleport(layout.spawns['review-door']), resume()), resume) : null,
+      // FR-20: xóa rồi khởi động lại (chưa có màn mở đầu SCR-02 — tải lại trang là bắt đầu lại từ khuôn viên).
+      resetProgress: () => (progress.reset(), location.reload()),
       onClose: resume,
     });
   };
   menuBtn.addEventListener('click', openMenu);
+  // SCR-04: nút "?" trên HUD; tự mở lần chơi đầu (FR-03).
+  const openTutorial = (first: boolean) => {
+    if (overlayOpen()) return;
+    input.enabled = false;
+    showTutorial(ui, isTouch, () => {
+      if (first) progress.setTutorialSeen();
+      resume();
+    });
+  };
+  helpBtn.addEventListener('click', () => openTutorial(false));
+  if (!progress.value.tutorialSeen) openTutorial(true);
   document.addEventListener('pointerlockchange', () => {
     if (document.pointerLockElement !== canvas) openMenu();
   });
@@ -218,7 +247,7 @@ function start() {
     follow.rotate(dx, dy);
     follow.zoomBy(zoom);
     hint.hidden = input.locked || !playing;
-    hud.hidden = menuBtn.hidden = !playing;
+    hud.hidden = hudRight.hidden = !playing;
 
     const elapsed = (now - last) / 1000;
     for (const dt of stepsFor(elapsed)) {
@@ -264,7 +293,7 @@ function start() {
       area = here;
       areaLabel.textContent = areaName(here);
     }
-    env.follow(player.feet);
+    env.follow(player.feet, Math.min(elapsed, 0.1));
     watchFps(elapsed, playing);
     gfx.render();
   });

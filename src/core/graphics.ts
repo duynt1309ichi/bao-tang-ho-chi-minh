@@ -16,7 +16,8 @@ export class Graphics {
     canvas: HTMLCanvasElement,
     private scene: THREE.Scene,
     private camera: THREE.PerspectiveCamera,
-    private shadowLight: THREE.DirectionalLight,
+    private sun: THREE.DirectionalLight,
+    private spot: THREE.SpotLight,
   ) {
     // Khử răng cưa bằng SMAA ở hậu kỳ; MSAA của canvas vô ích khi vẽ qua composer.
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance', stencil: false });
@@ -36,11 +37,14 @@ export class Graphics {
         if (o instanceof THREE.Mesh) for (const m of [o.material].flat()) m.needsUpdate = true;
       });
     }
-    this.shadowLight.castShadow = shadows;
-    if (shadows && this.shadowLight.shadow.mapSize.x !== p.shadowMap) {
-      this.shadowLight.shadow.mapSize.setScalar(p.shadowMap);
-      this.shadowLight.shadow.map?.dispose();
-      this.shadowLight.shadow.map = null;
+    this.sun.castShadow = shadows;
+    // Cao: thêm đèn rọi đổ bóng gần người chơi (world/environment.ts chọn chóa).
+    this.spot.visible = this.spot.castShadow = p.spotShadow;
+    for (const l of [this.sun, this.spot]) {
+      if (!shadows || l.shadow.mapSize.x === p.shadowMap) continue;
+      l.shadow.mapSize.setScalar(p.shadowMap);
+      l.shadow.map?.dispose();
+      l.shadow.map = null;
     }
 
     this.composer?.dispose();

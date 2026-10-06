@@ -175,7 +175,10 @@ Trường settings sai kiểu → dùng mặc định **riêng trường đó** 
 |------|------|---------|
 | `scripts/validate-content.ts` | Gọi `validateContent()` trên `src/content/*` + `layout.json` + đối chiếu `CREDITS.md` và file trong `public/`; in lỗi, thoát mã 1 nếu có lỗi | `npm run build` |
 | `scripts/build-manifest.ts` | Sinh `manifest.json` (mục 1.5), in bảng dung lượng, thoát mã 1 nếu vượt ngân sách HLD 4.2 | `npm run build` |
-| `tools/blender/build_building.py` | Đọc `layout.json`, dựng tường/sàn/trần/phào/cửa theo khu + mesh va chạm hậu tố `_col` | tay, khi làm asset |
+| `scripts/export-bake.mjs` | Chạy `scripts/bake-scene.ts` qua Vite: xuất hình học + uv1 lightmap + đèn ra `assets-src/bake/scene.obj`, `scene.json` (ADR-08) | khi đổi `layout.json` / hình học |
+| `tools/blender/bake_lightmap.py` | Bake Cycles + khử nhiễu OIDN → `public/assets/lightmap.webp`, `lightmap.json` (`scale`) | sau `export-bake` |
+| `tools/blender/convert_assets.py` | Texture CC0 trong `assets-src/` → WebP 1K/2K; HDRI → `sky.webp` | khi thêm asset |
+| `tools/blender/build_building.py` *(thay bằng ADR-08, không dùng)* | Đọc `layout.json`, dựng tường/sàn/trần/phào/cửa theo khu + mesh va chạm hậu tố `_col` | tay, khi làm asset |
 | `tools/blender/bake.py` | UV2 + bake lightmap mỗi khu (Cycles) ra PNG 2048 | tay |
 | `tools/blender/export.py` | Xuất GLB mỗi khu vào `assets-src/`, sau đó `gltf-transform` nén vào `public/assets/<bundle>/` | tay |
 

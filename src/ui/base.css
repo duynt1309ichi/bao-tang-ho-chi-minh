@@ -111,7 +111,23 @@ kbd { display: inline-block; margin-right: 8px; padding: 0 6px; border: 1px soli
 .segmented span { display: grid; place-items: center; min-height: var(--hit); min-width: var(--hit); padding: 0 14px; border-radius: 999px; font-weight: 600; font-size: var(--fs-sm); }
 .segmented input:checked + span { background: var(--accent); color: var(--accent-ink); }
 .segmented input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
-.hud-menu { position: absolute; top: 16px; right: 16px; }
+.hud-right { position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; }
+.danger-btn { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 50%, transparent); }
+.range { display: inline-flex; align-items: center; gap: 12px; }
+.range input { width: 180px; accent-color: var(--accent); }
+.range output { min-width: 32px; text-align: right; font-variant-numeric: tabular-nums; }
+.setting { min-height: var(--hit); }
+.setting input[type='checkbox'] { width: 22px; height: 22px; accent-color: var(--accent); }
+.panel-center.wide { width: min(860px, calc(100% - 32px)); }
+h3 { font-size: var(--fs-lg); margin: 16px 0 8px; }
+.table-scroll { max-height: 40vh; overflow: auto; margin-top: 12px; border-top: var(--border); }
+table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+th, td { text-align: left; padding: 8px; border-bottom: var(--border); vertical-align: top; }
+th { position: sticky; top: 0; background: var(--surface); color: var(--ink-muted); font-weight: 600; }
+a { color: var(--accent); overflow-wrap: anywhere; }
+.keys { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; margin: 0; }
+.keys dt { font-weight: 600; color: var(--accent); }
+.keys dd { margin: 0; }
 
 /* Điện thoại: bảng hiện vật chiếm 60% dưới (FSD SCR-07) */
 @media (max-width: 767px) {
