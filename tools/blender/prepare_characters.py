@@ -7,7 +7,9 @@ import bpy
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
 SRC = os.path.join(ROOT, 'assets-src', 'characters')
 OUT = os.path.join(ROOT, 'public', 'assets', 'characters')
-KEEP = {'Idle': 'idle', 'Walk': 'walk', 'Run': 'run'}
+# Idle_Neutral thay Idle: "Idle" không key Foot/Body/Torso, dựa vào tư thế nghỉ của file gốc — Blender xuất lại
+# tư thế nghỉ thành bind pose nên đứng yên thì chân bị vặn. Idle_Neutral key đủ nên không phụ thuộc tư thế nghỉ.
+KEEP = {'Idle_Neutral': 'idle', 'Walk': 'walk', 'Run': 'run'}
 
 os.makedirs(OUT, exist_ok=True)
 for name in ('nam', 'nu'):
