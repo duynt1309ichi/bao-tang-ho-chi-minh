@@ -7,8 +7,8 @@
 - **Ngày khởi tạo:** 2026-10-06
 - **Loại dự án:** Mới (Track A)
 - **Kiểu bố trí tài liệu:** A — monolith, tài liệu đi chung repo code (`docs/{ba,sa,design,qa,security}`)
-- **Giai đoạn hiện tại:** B4 — Phát triển (mốc M5: màn tải/mở đầu, chọn nhân vật, cảm ứng, chân dung — xong, chờ nghiệm thu)
-- **Cổng đang chờ:** GATE-4 (phạm vi M5; M1–M4 đã nghiệm thu)
+- **Giai đoạn hiện tại:** B4 — Kiểm thử (tester vòng 1 xong: 2 lỗi Major, 3 Minor — chờ dev sửa)
+- **Cổng đang chờ:** GATE-4 (nghiệm thu toàn bộ sau khi test xanh; M1–M5 đã nghiệm thu chức năng từng mốc)
 - **GATE-3 (đóng băng thiết kế):** BẬT
 - **GATE-4 (nghiệm thu chức năng):** BẬT
 
@@ -32,9 +32,9 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 | scaffold-frontend | Frontend    | APPROVED     | 2026-10-06             |
 | scaffold-mobile   | Mobile      | —            | không áp dụng — web responsive thay app native |
 | src (code)        | Frontend    | IN_PROGRESS  | 2026-10-06             |
-| test-plan.md      | Tester      | NOT_STARTED  |                        |
-| test-cases.md     | Tester      | NOT_STARTED  |                        |
-| test-report.md    | Tester      | NOT_STARTED  |                        |
+| test-plan.md      | Tester      | DONE         | 2026-10-06             |
+| test-cases.md     | Tester      | DONE         | 2026-10-06             |
+| test-report.md    | Tester      | IN_PROGRESS  | 2026-10-06 — vòng 1 xong, chờ sửa lỗi rồi chạy vòng 2 |
 | pentest-report.md | Security    | NOT_STARTED  |                        |
 | user-guide.md     | BA          | NOT_STARTED  |                        |
 | docker-compose.yml| DevOps      | —            | thay bằng Vercel Preview (quy trình rút gọn); deploy-notes.md vẫn làm |
@@ -51,6 +51,7 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 | GATE-3 | Duyệt    | anh Duy     | 2026-10-06 | FSD, LLD, design, scaffold |
 | GATE-4 | Duyệt (phạm vi M1–M2) | anh Duy | 2026-10-06 | Nghiệm thu chức năng M1–M2, gồm 38 câu trắc nghiệm. M3–M5 nghiệm thu tiếp ở GATE-4 sau |
 | GATE-4 | Duyệt (phạm vi M3–M4) | anh Duy | 2026-10-06 | Nghiệm thu M3–M4 (gồm nội dung rà ở M4). M5 nghiệm thu sau |
+| GATE-4 | Duyệt (phạm vi M5) | anh Duy | 2026-10-06 | Nghiệm thu M5. Chuyển sang kiểm thử |
 | GATE-5 | —        |             |      |         |
 | GATE-6 | —        |             |      |         |
 
@@ -87,3 +88,5 @@ Trạng thái: `NOT_STARTED` → `IN_PROGRESS` → `DONE` → `APPROVED` (hoặc
 - 2026-10-06 — anh Duy đồng ý tải asset ngoài cho M5: 4 ảnh chân dung phạm vi công cộng (Wikimedia Commons: Mác — Mayall 1875, Ăngghen — W. Hall 1877, Lênin — P. Zhukov 1920, Hồ Chí Minh — 1946) và 2 nhân vật CC0 Quaternius (Poly Pizza: "Casual Character" nam, "Animated Woman" nữ, cùng bộ xương). File gốc ở `assets-src/` (không đẩy git); `tools/convert_portraits.py` → WebP 480 × 640 (32–74 KB); `tools/blender/prepare_characters.py` → GLB giữ idle/walk/run (~780 KB mỗi nhân vật). Đã ghi `CREDITS.md`.
 - 2026-10-06 — M5 (nhánh `feature/m5-mobile`): (1) **SCR-01** màn tải theo % byte gói ban đầu (`core/loader.ts`, kích thước file đọc từ đĩa qua plugin `virtual:asset-sizes` trong `vite.config.ts` — thay `manifest.json`), mỗi file thử 3 lần cách 2 s, lỗi → MSG-02 + "Thử lại" chỉ tải file còn thiếu, MSG-03 sau 30 s; host trả HTML cho file thiếu cũng tính là lỗi; MSG-04 khi mất ngữ cảnh WebGL, quá 5 s có "Tải lại trang". (2) **SCR-02** màn mở đầu trên cảnh khuôn viên, camera bay chậm; "Bắt đầu" / "Tiếp tục tham quan →" + "Đã khám phá N/63"; người chơi cũ vào ở sảnh. (3) **FR-02 / SCR-03** chọn Nam/Nữ, đổi thẻ là đổi mô hình ngay; đổi lại trong Cài đặt; hoạt ảnh idle/walk/run cross-fade 0,2 s. (4) **FR-06** cảm ứng: joystick nửa trái (> 60% bán kính = chạy), kéo nửa phải xoay camera, chụm 2 ngón zoom, theo từng ngón nên đi + xoay cùng lúc; nút "Xem" 64 px; **SCR-15** gợi ý xoay ngang. (5) **FR-13 2c** ảnh chân dung + dòng nguồn ảnh trong bảng hiện vật và trên pano 3D; điện thoại: bảng 60% dưới có tay kéo mở toàn màn; HUD thu gọn khi cầm ngang. (6) FR-26 thêm phần asset: ảnh hiện vật phải tồn tại, mọi file trong `img/`, `characters/` phải có trong `CREDITS.md`. CSP thêm `connect-src blob:`. 69 unit test xanh; build OK. Gói tải ban đầu ~3,8 MB asset + ~0,4 MB JS nén (NFR-03 ≤ 15 MB). Thử trên trình duyệt: luồng mới (mở đầu → chọn Nữ → hướng dẫn → chơi, tải lại vẫn Nữ và "Tiếp tục"), lỗi tải (giấu `sky.webp` → MSG-02 sau ~5 s → trả file, "Thử lại" chỉ tải lại đúng file đó), mất/khôi phục ngữ cảnh, 375 × 812 (gợi ý xoay, bảng 60% + mở rộng), 812 × 375 (joystick + xoay đồng thời, nhấc ngón là dừng, nút Xem mở chân dung), đổi nhân vật trong Cài đặt.
 - 2026-10-06 — **Còn lại sau M5 / cần làm trên máy thật:** đo FPS NFR-01 (Iris Xe) và NFR-02 (Android tầm trung), thử Safari iOS (NFR-05) — đưa vào test-report; tốc độ hoạt ảnh bước chân (`TIME_SCALE` trong `player/character.ts`) mới chỉnh ước lượng, cần xem bằng mắt khi chơi thật.
+- 2026-10-06 — anh Duy nghiệm thu GATE-4 phạm vi M5. Merge `feature/m5-mobile` vào `main` (fast-forward `9f0b780`). Chuyển sang kiểm thử (tester, B4).
+- 2026-10-06 — Tester viết `docs/qa/test-plan.md`, `docs/qa/test-cases.md` (124 TC, 27/27 FR) và chạy vòng 1 trên Chrome (khung Browser) + build: 107 Pass, 7 Fail, 10 Blocked; 69 unit test xanh, `npm audit --omit=dev` 0 lỗ hổng, gói tải ban đầu 4,6 MB. `docs/qa/test-report.md` ghi 5 lỗi: **BUG-01 Major** chưa có popup vào phòng (FR-09/SCR-06), **BUG-02 Major** chưa có khung xoay mô hình 🧊 (FR-13 2a, 23 hiện vật), BUG-03 Minor phím M không thu nhỏ bản đồ, BUG-04 Minor ẩn tab không mở menu khi chưa khóa con trỏ (FR-21 b), BUG-05 Minor ghi cài đặt lỗi không báo MSG-11. Blocked chủ yếu do cần máy thật (NFR-01/02/04/05) — checklist ở test-plan mục 4.
