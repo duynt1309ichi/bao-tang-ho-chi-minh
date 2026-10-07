@@ -14,11 +14,20 @@ CROP = {
     'angghen': (0.5, 0.5, 1.0),
     'lenin': (0.5, 0.4, 1.0),
     'ho-chi-minh': (0.5, 0.45, 1.0),
+    # Ảnh nhóm tác giả (bảng ở khuôn viên): assets-src/team/N.jpg → img/team/N.webp
+    'team/1': (0.52, 0.5, 1.0),
+    'team/2': (0.48, 0.5, 1.0),
+    'team/3': (0.5, 0.5, 1.0),
+    'team/4': (0.5, 0.5, 1.0),
+    'team/5': (0.5, 0.5, 1.0),
+    'team/6': (0.5, 0.5, 1.0),
+    'team/7': (0.5, 0.4, 1.0),
 }
 
-os.makedirs(OUT, exist_ok=True)
+os.makedirs(os.path.join(OUT, 'team'), exist_ok=True)
 for name, (cx, cy, k) in CROP.items():
-    im = Image.open(os.path.join(SRC, f'{name}.jpg')).convert('RGB')
+    src = os.path.join(ROOT, 'assets-src', f'{name}.jpg') if '/' in name else os.path.join(SRC, f'{name}.jpg')
+    im = Image.open(src).convert('RGB')
     w = im.width * k
     h = min(w * H / W, im.height)
     w = h * W / H

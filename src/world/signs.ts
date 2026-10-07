@@ -266,3 +266,32 @@ export function aboutPanel() {
     fillLines(ctx, wrapText(m, ABOUT_BOOK.note, W - 160), 80, y + 70, 54);
   });
 }
+
+/** Ảnh nhóm tác giả (public/assets/img/team, tools/convert_portraits.py) — bảng ở khuôn viên. */
+export const TEAM_PHOTOS = [1, 2, 3, 4, 5, 6, 7].map((n) => `/assets/img/team/${n}.webp`);
+
+/** Bảng "Những người sáng tạo ra sản phẩm" ở khuôn viên: 7 ảnh 3 : 4, hàng 4 + hàng 3. */
+export function teamPanel() {
+  const W = 2048, H = 1280, pw = 330, ph = 440, gap = 44;
+  const tex: THREE.CanvasTexture = panel(W, H, (ctx) => {
+    ctx.textAlign = 'center';
+    ctx.fillStyle = ACCENT;
+    ctx.font = `700 64px ${FONT}`;
+    ctx.fillText('NHỮNG NGƯỜI SÁNG TẠO RA SẢN PHẨM', W / 2, 70);
+    ctx.fillRect(W / 2 - 60, 160, 120, 4);
+    TEAM_PHOTOS.forEach((src, i) => {
+      const row = i < 4 ? 0 : 1, n = row ? 3 : 4, col = row ? i - 4 : i;
+      const x = (W - n * pw - (n - 1) * gap) / 2 + col * (pw + gap), y = 210 + row * (ph + gap);
+      ctx.strokeStyle = ACCENT;
+      ctx.lineWidth = 6;
+      ctx.strokeRect(x - 6, y - 6, pw + 12, ph + 12);
+      const img = new Image();
+      img.onload = () => {
+        ctx.drawImage(img, x, y, pw, ph);
+        tex.needsUpdate = true;
+      };
+      img.src = src;
+    });
+  });
+  return tex;
+}

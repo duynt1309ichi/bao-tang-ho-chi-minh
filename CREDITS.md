@@ -16,6 +16,7 @@ Mọi tài nguyên bên ngoài dùng trong bảo tàng (SRS FR-27). Trang "Ngu�
 | Ảnh chân dung Ph. Ăngghen (img/angghen.webp) | William Hall, 1877 | https://commons.wikimedia.org/wiki/File:Friedrich_Engels_portrait_(cropped).jpg | Phạm vi công cộng |
 | Ảnh chân dung V.I. Lênin (img/lenin.webp) | Pavel Zhukov, 1920 | https://commons.wikimedia.org/wiki/File:Lenin_1920.jpg | Phạm vi công cộng |
 | Ảnh chân dung Hồ Chí Minh (img/ho-chi-minh.webp) | Không rõ tác giả, khoảng 1946 | https://commons.wikimedia.org/wiki/File:Ho_Chi_Minh_-_1946_Portrait_(cropped).jpg | Phạm vi công cộng |
+| Ảnh nhóm tác giả (img/team/1–7.webp, bảng ở khuôn viên) | Nhóm thực hiện sản phẩm | Ảnh cá nhân của nhóm | Dùng với sự đồng ý của nhóm |
 | Nhân vật nam "Casual Character" (characters/nam.glb, giữ hoạt ảnh idle/walk/run) | Quaternius | https://poly.pizza/m/kZ3DmIoGip | CC0 |
 | Nhân vật nữ "Animated Woman" (characters/nu.glb, giữ hoạt ảnh idle/walk/run) | Quaternius | https://poly.pizza/m/nIItLV9nxS | CC0 |
 | Phông chữ Be Vietnam Pro | The Be Vietnam Pro Project Authors | https://github.com/bettergui/BeVietnamPro | SIL OFL 1.1 |

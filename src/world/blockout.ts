@@ -5,7 +5,7 @@ import type { Layout } from '../content/types';
 import { assetUrl } from '../core/loader';
 import { ZONE_COLORS } from '../ui/tokens';
 import { buildGeometry, MATS, REVIEW_COLOR, signAreas, type CanvasName, type MatSpec, type TexName } from './geometry';
-import { aboutPanel, exhibitAtlas, museumMapPanel, signAtlas, welcomePanel } from './signs';
+import { aboutPanel, exhibitAtlas, museumMapPanel, signAtlas, teamPanel, welcomePanel } from './signs';
 
 export type TexSize = '1k' | '2k';
 
@@ -43,6 +43,7 @@ export function buildBlockout(layout: Layout) {
     welcome: welcomePanel(),
     museumMap: museumMapPanel(layout, rooms),
     about: aboutPanel(),
+    team: teamPanel(),
   };
 
   const group = new THREE.Group();

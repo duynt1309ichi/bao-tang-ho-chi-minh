@@ -16,7 +16,7 @@ const LINTEL_Y = 2.6;
 export const REVIEW_COLOR = '#3e5c4a'; // --zone-review
 
 export type TexName = 'plaster' | 'parquet' | 'marble' | 'grass' | 'carpet';
-export type CanvasName = 'atlas' | 'signs' | 'welcome' | 'museumMap' | 'about';
+export type CanvasName = 'atlas' | 'signs' | 'welcome' | 'museumMap' | 'about' | 'team';
 export interface MatSpec {
   color: string;
   roughness: number;
@@ -50,6 +50,7 @@ export const MATS = {
   welcome: { color: '#ffffff', roughness: 0.7, map: 'welcome' },
   museumMap: { color: '#ffffff', roughness: 0.7, map: 'museumMap' },
   about: { color: '#ffffff', roughness: 0.7, map: 'about' },
+  team: { color: '#ffffff', roughness: 0.7, map: 'team' },
   review: { color: REVIEW_COLOR, roughness: 0.6 },
   ...zoneMats(),
 } satisfies Record<string, MatSpec>;
@@ -186,6 +187,13 @@ export function buildGeometry(layout: Layout) {
   };
   board('museumMap', 4.2, 2.52, lx + lw / 2, 2.1, lz, 1);
   board('about', 3.3, 2.2, lx + lw / 2, 2.0, lz + ld, -1);
+
+  // Bảng nhóm tác giả ở khuôn viên, cạnh lối đi, xoay chéo về phía cổng. Chiếu sáng động (không bake) để lightmap cũ vẫn khớp.
+  const [tw, th] = [4, 2.5];
+  const tm = new THREE.Matrix4().makeRotationY(-Math.PI / 4).setPosition(-30, 0, -5);
+  add(box(0, 2, -0.04, tw + 0.16, th + 0.16, 0.06).applyMatrix4(tm), 'dark', { solid: true, baked: false });
+  for (const s of [-1, 1]) add(box(s * (tw / 2 - 0.3), 0.4, -0.04, 0.1, 0.8, 0.1).applyMatrix4(tm), 'dark', { solid: true, baked: false });
+  add(new THREE.PlaneGeometry(tw, th).translate(0, 2, 0).applyMatrix4(tm), 'team', { uv: [0, 0, 1, 1], baked: false });
 
   // Hiện vật theo loại; mặt chữ lấy từ atlas (ô = thứ tự trong exhibits.ts).
   for (const p of layout.exhibits) {
